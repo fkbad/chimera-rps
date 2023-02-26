@@ -107,3 +107,7 @@ You can also try running through the above steps, but doing the following:
   with the `--addr-port` argument:
 
       chimera-server --load-game chimera.examples.connectm.ConnectM --log-level DEBUG --addrport 0.0.0.0:14300  
+
+## Documentation
+
+API and reference documentation: https://chimera-docs.readthedocs.io/
