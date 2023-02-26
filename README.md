@@ -1,5 +1,7 @@
 # Chimera
 
+[![Tests status](https://github.com/uchicago-cs/chimera/actions/workflows/run-tests.yml/badge.svg)](https://github.com/uchicago-cs/chimera/actions/workflows/run-tests.yml) [![Documentation Status](https://readthedocs.org/projects/chimera-docs/badge/?version=latest)](https://chimera-docs.readthedocs.io/en/latest/?badge=latest)
+
 Chimera is a framework for publishing games through a [websockets](https://en.wikipedia.org/wiki/WebSocket)-based API, allowing users to play games remotely through a variety of interfaces (web, mobile, desktop, etc.). It was developed at the [University of Chicago's Department of Computer Science](https://www.cs.uchicago.edu/) to support course projects, allowing students to explore topics in software design, APIs, networked applications, etc.
 
 ## Installing
