@@ -1,0 +1,30 @@
+name: Run Tests
+
+on: [push]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install chimera
+        run: pip3 install -e .
+
+      - name: Run mypy
+        run: |
+          mypy src/chimera/authoring.py
+          mypy src/chimera/client/*
+
+      - name: Run tests
+        run: pytest -v
