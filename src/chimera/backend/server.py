@@ -219,6 +219,7 @@ class BaseChimeraServer(ABC):
             raise ValueError(f"game_logic_cls parameter to register_game must be a subclass of GameLogic")
 
         rg = RegisteredGame(game_id, game_cls, description)
+        print(f"registered game! {game_cls}")
 
         self.games[game_id] = rg
 

@@ -35,9 +35,9 @@ def init_chimera(server_uri: str, player_name, match_id: Optional[str]) -> Match
 
     # Get list of games, and make sure "connectm" is supported
     games = chimera.get_games()
-    if "connectm" not in games:
-        print(f"ERROR: Server at {server_uri} does not support game 'connectm'")
-        sys.exit(1)
+    # if "connectm" not in games:
+    #     print(f"ERROR: Server at {server_uri} does not support game 'connectm'")
+    #     sys.exit(1)
 
     # Try to create or join a match.
     # If there is a duplicate player, we will try appending
@@ -52,13 +52,13 @@ def init_chimera(server_uri: str, player_name, match_id: Optional[str]) -> Match
                 pname = player_name
 
             if match_id is None:
-                match = games["connectm"].create_match(pname)
+                match = games["rockpaperscissors"].create_match(pname)
                 print(f"Your match ID is {match.id}")
                 print("Waiting for other player to join...")
                 while match.status != Match.STATUS_IN_PROGRESS:
                     match.wait_for_update()
             else:
-                match = games["connectm"].join_match(match_id, pname)
+                match = games["rockpaperscissors"].join_match(match_id, pname)
                 while match.status != Match.STATUS_IN_PROGRESS:
                     match.wait_for_update()
 

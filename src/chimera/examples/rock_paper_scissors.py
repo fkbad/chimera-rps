@@ -489,6 +489,7 @@ class RockPaperScissors(TwoPlayerGame):
         # update the history
         # self.history.append([p1_move, p2_move, id of player who won the round (or None) ])
         history_item = [*self.current_round_moves,winning_player]
+        print(f"HISTORY ITEM TO APPEND {history_item[2].name}")
 
         # should never be more than 3, two players, one outcome
         assert len(history_item) == 3
@@ -525,13 +526,16 @@ class RockPaperScissors(TwoPlayerGame):
             # assign current_round_winner_id so game_state can easily access 
             # the information 
             self.current_round_winner_id = 0
+            print("first player won the round!!")
             return self.get_player_by_id(0)
 
         elif move2.beats(move1):
             self.current_round_winner_id = 1
+            print("SECOND player won the round!!")
             return self.get_player_by_id(1)
         else:
             # neither move beats the other
+            print("No One player won the round!!")
             return None
 
     @property
@@ -691,7 +695,7 @@ class RockPaperScissors(TwoPlayerGame):
 
             winner_name = None
             if optional_winning_Player is not None:
-                optional_winning_Player.name
+                winner_name = optional_winning_Player.name
 
             round["moves"] = moves
             round["winner"] = winner_name

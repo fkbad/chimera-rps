@@ -56,9 +56,11 @@ def cmd(addrport, load_game, log_level):
         if game_cls is None:
             print(f"ERROR: No such class: {load_game}")
             sys.exit(1)
+        logging.error(f"found game class")
 
         class_name = game_cls.__name__
         ws_server.register_game(class_name.lower(), game_cls, class_name)
+        logging.error(f"registered game {class_name.lower()}")
 
     asyncio.run(chimera_server(ws_server))
 
