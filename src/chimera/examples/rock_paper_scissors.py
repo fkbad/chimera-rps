@@ -327,11 +327,8 @@ class RockPaperScissors(TwoPlayerGame):
         pass
 
 
-    # all I expect is a data block with a string
-    # no fields within data
-    # thus I provide no Fields to the expect_data decorator
-    @chimera.decorators.expect_data([])
-    def action_move(self,player: Player,data: str):
+    @chimera.decorators.expect_data(["move"])
+    def action_move(self,player: Player,data: Dict[str,str]):
         """
         method called when a player sends a "move" game-action request 
         to the server
@@ -343,9 +340,10 @@ class RockPaperScissors(TwoPlayerGame):
             player: Player object corresponding to the player making a move
 
             data: the "data" field of the params. 
-                    I specify this to be either "Rock", "Paper", or "Scissors"
-
-                    considering adding another field for an incompleted move or disconnect
+                  must be a dictionary (required by Match.game_action()) 
+                  {
+                    "move": "rock"
+                  }
 
         Outputs:
             "result" parameter of the response message to be sent out to 
@@ -372,7 +370,7 @@ class RockPaperScissors(TwoPlayerGame):
         result = {}
 
         # get the Move object (exception is raised if invalid name is provided)
-        player_move = self.get_move_from_player_data(data)
+        player_move = self.get_move_from_player_data(data["move"])
 
         move_completed: str = self.play_move(player=player,player_move=player_move)
 
@@ -520,7 +518,7 @@ class RockPaperScissors(TwoPlayerGame):
 
         move1,move2 = self.current_round_moves
 
-        assert move1 is Move
+        # assert move1 is Move
 
 
         if move1.beats(move2):
@@ -688,8 +686,8 @@ class RockPaperScissors(TwoPlayerGame):
         p1_name, p2_name = player_names
         for p1_move,p2_move,optional_winning_Player in self.history:
             round = {}
-            moves = {p1_name:p1_move, 
-                     p2_name:p2_move}
+            moves = {p1_name:p1_move.name, 
+                     p2_name:p2_move.name}
 
             winner_name = None
             if optional_winning_Player is not None:
