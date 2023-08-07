@@ -249,6 +249,7 @@ class RockPaperScissors(TwoPlayerGame):
                         "current_round" parameter
                         ]
                 }
+                "winner" : winning player's name (or None)
         """
         state = {}
 
@@ -276,6 +277,14 @@ class RockPaperScissors(TwoPlayerGame):
         # now history
         history_list = self.get_history_list_for_game_state(player_names=player_names)
         state["history"] = history_list
+
+        # now winner
+        winner = self.winner
+        if winner is not None:
+            winner = winner.name
+
+        # either none, or the name of the winner
+        state["winner"] = winner
 
         return state
 
@@ -489,7 +498,6 @@ class RockPaperScissors(TwoPlayerGame):
         # update the history
         # self.history.append([p1_move, p2_move, id of player who won the round (or None) ])
         history_item = [*self.current_round_moves,winning_player]
-        print(f"HISTORY ITEM TO APPEND {history_item[2].name}")
 
         # should never be more than 3, two players, one outcome
         assert len(history_item) == 3

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Select Your Game</title>
+  <script src="rps.js" type="module"></script>
+</head>
+<body>
+  <h1>Select Your Game</h1>
+  <!-- <form action="/submit" method="post" onsubmit="return validateForm()"> -->
+  <form id="game-submission-form" action="/submit">
+    <!-- The form element defines a form that can be submitted to a server -->
+    <label for="dropdown">Select Your Rock Paper Scissors Variant:</label>
+    <!-- The label element defines a label for the dropdown element -->
+    <select id="dropdown" name="dropdown">
+      <!-- The select element defines a dropdown list of options -->
+      <option value="">--Please choose an option--</option>
+      <!-- The option element defines an option in the dropdown list -->
+      <option value="rps">Rock Paper Scissors</option>
+      <option value="rpsls">Rock Paper Scissors Lizard Spock</option>
+    </select>
+    <input type="submit" value="Submit">
+    <!-- The input element defines a submit button for the form -->
+  </form>
+</body>
+</html>
+
