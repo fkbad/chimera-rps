@@ -15,8 +15,8 @@ import {createTable}  from './rps_table.js';
 // the client sends two messages before the server can 
 // handle the first request
 //
-// Leaving as single variable for now for simplicity
-let last_sent_unresolved_message = null;
+
+sent_message_queue = {}
 
 
 // increasing counter for sent out message ID's
@@ -105,9 +105,8 @@ function registerTable(table,websocket) {
       // Get the word associated with the button
       let word = event.target.innerText;
       // Assume that this function returns an object with some properties
-      // let message = create_message_for_game_move(word, websocket);
+      let message = create_message_for_game_move(word);
 
-      let message = {"yay":"functinoing"}
       // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
       message.NEW_FIELD = "NEW_VALUE";
       // Do something with the modified message object, such as sending it to the server or displaying it on the screen
@@ -119,6 +118,48 @@ function registerTable(table,websocket) {
 }
 
 
+function create_message_for_game_move(player_move_string,client_id) {
+  /*
+   * creates a game-action request message in Chimera
+   * format from the move a player wants to perform
+   *
+   * type : request
+   * operation : game_action
+   * id : client_id ONLY, as the `send_message()` function adds the 
+   *      sequence number 
+   * params: {
+   *    match-id : 
+   *    action : "move"
+   *    data : {
+   *        "move": "rock"
+   *    }
+   * }
+   */
+  // general part of message
+  message = {};
+  message.type = "request";
+  message.operation = "game-action";
+
+  // incomplete id, as the sequence number is appended 
+  // when `send_message()` is called
+  message.id = client_id;
+
+  // fill in params
+  params = {};
+  params["match-id"] = "GOTTA ADD THE MATCH ID";
+  params.action = "move"
+  
+  // fill in params data
+  data = {}
+  data.move = player_move_string
+
+  params.data = data
+
+  message.params = params
+
+  return message
+
+}
 
 
 function initGame(id,websocket) {
@@ -195,7 +236,7 @@ function initGame(id,websocket) {
 
 
 
-function listen(id,websocket) {
+function listen(client_id,websocket) {
   /** listen to any incoming message and parse it **/
   websocket.addEventListener("message", ({ data }) => {
     // receive message from the server
@@ -211,7 +252,7 @@ function listen(id,websocket) {
 
       case "response":
         console.log("received response <<<",message)
-        // parse_response(id,message,websocket)
+        parse_response(client_id,message,websocket)
         break;
 
       default:
@@ -220,10 +261,47 @@ function listen(id,websocket) {
   });
 }
 
-// function parse_response(id,response,websocket) {
-//   /** function to take in any kind of response and handle it */
-//   
-// }
+function parse_response(client_id,response,websocket) {
+  /** function to take in any kind of response and handle it 
+   * Inputs:
+   *     client_id: the id of the client that sent the original message
+   *     response: javascript object received from the server
+   *     websocket: the websocket this client is connected on 
+   *
+   * Outputs:
+   *     nothing 
+   * */
+
+  const response_has_id = response.hasOwnProperty("id")
+  if (!response_has_id) {
+    console.log("received response with no ID:",response)
+    return
+  }
+
+  // if there is an id, then lets grab and use it!
+  const response_id = response.id
+  console.log("received RESPONSE from server with id", response_id);
+
+
+  // make sure we actually have a response id and a return function
+  // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
+  queue_callback_function = sent_message_queue[response_id]
+  if (typeof(queue_callback_function) == 'function'){
+
+    let response_function = sent_message_queue[response_id];
+
+    response_function(response);
+
+    //after the response function for a sent request is called, this message
+    // has finished processing. thus we can delete this entry from the queue
+    // to avoid memory problems
+    delete sent_message_queue[response_id]
+    
+  } else {
+    console.log("failed to find function associated with response_id")
+  }
+  
+}
 
 function updateClipboard(newClip) {
   /** takes some text and write it to clipboard */
@@ -250,15 +328,15 @@ window.addEventListener("DOMContentLoaded", () => {
   const websocket_address = getWebSocketServer()
   const websocket = new WebSocket(websocket_address);
 
-  // add event listeners to table to listen for clicks
-  registerTable(table,websocket)
 
-  const user_id = generate_user_id()
-  //
+  const client_id = generate_user_id()
+  // add event listeners to table to listen for clicks
+
+  registerTable(table,client_id,websocket)
   // listening for someone opening a websocket
-  initGame(user_id,websocket)
+  initGame(client_id,websocket)
 
   // listen for messages
-  listen(user_id,websocket)
+  listen(client_id,websocket)
 
 });

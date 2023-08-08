@@ -46,7 +46,7 @@ function listen_for_form(websocket) {
     // Get the current URI
     var uri = window.location.href;
     // Append the selected value as a parameter named "game_id"
-    var newUri = uri + "games/play.html?game_id=" + value;
+    var newUri = uri + "games/rps.html?game_id=" + value;
     // Redirect the user to the new URI
     console.log("sending user to new URI:",newUri)
     window.location.assign(newUri);
@@ -104,22 +104,6 @@ function getWebSocketServer() {
   }
 }
 
-// overall initializer, the bootstrap or "main"
-window.addEventListener("DOMContentLoaded", () => {
-  // Open the WebSocket connection and register event handlers.
-  // port specified in main() of `app.py`
-
-  const websocket_address = getWebSocketServer()
-  const websocket = new WebSocket(websocket_address);
-
-  // listening for someone opening a websocket
-  initGame(websocket)
-
-  // listen for messages
-  listen(websocket)
-
-  listen_for_form(websocket)
-});
 
 function initGame(websocket) {
   //function to start a game upon the initialization of a websocket
@@ -161,6 +145,26 @@ function listen(websocket) {
 }
 
 
+function create_message_for_game_move(move_string) {
+  /*
+   * function to create the message for a game-action
+   * corresponding to a particular move
+   *
+   * Inputs:
+   *    move_string: the string of the move to do
+   *                 validation of this move is done by the game logic
+   *                 and the response will be processed by the RPS javascript file
+   *
+   * Outputs:
+   *    an unfinished game-action request message
+   *    unfinished as the message_id has yet to be decided
+   *
+   *    this should be populated in rps-game-playing.js 
+   */
+  message = {}
+  // TODO actually create messages
+  return message
+}
 // function parse_response(id,response,websocket) {
 //   /** function to take in any kind of response and handle it */
 //   
@@ -179,3 +183,21 @@ function updateClipboard(newClip) {
     },
   );
 }
+
+// BOOTSTRAP
+// overall initializer, the bootstrap or "main"
+window.addEventListener("DOMContentLoaded", () => {
+  // Open the WebSocket connection and register event handlers.
+  // port specified in main() of `app.py`
+
+  const websocket_address = getWebSocketServer()
+  const websocket = new WebSocket(websocket_address);
+
+  // listening for someone opening a websocket
+  initGame(websocket)
+
+  // listen for messages
+  listen(websocket)
+
+  listen_for_form(websocket)
+});
