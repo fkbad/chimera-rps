@@ -25,7 +25,7 @@ let MATCH_ID = null
 // to determine the "id" parameter of any sent message
 let client_id = null
 
-function send_message(message,websocket,callback_function) {
+function send_message(message,callback_function) {
   /** takes a fully formatted, non-jsoned message
    * and sends it to the websocket 
    *
@@ -33,8 +33,8 @@ function send_message(message,websocket,callback_function) {
    *
    * Inputs:
    *     message: the actual message to send to the server
-   *              does not have a fully filled in message id, 
-   *              should lack the message_id sequence number
+   *              message should not have an ID field, as that 
+   *              will be filled in here
    *     
    *     websocket: the websocket to send the message to
    *
@@ -43,7 +43,19 @@ function send_message(message,websocket,callback_function) {
    *         should only ever take in one argument: the whole server's message as a JSON object
    *              */
 
+  // should never send a message before we have a client_id
+  if (client_id === null) {
+    console.error("tried to send message before client_id was assigned")
+    return
+  }
+
+  const already_has_id = message.hasOwnProperty("id")
+  if (already_has_id) {
+    console.error("message giving to send_message that already had ID field",message)
+    return
+  }
   const stringified_message_id = String(next_message_id)
+
   const message_id_to_append = client_id + "-" + stringified_message_id
   message["id"] = message_id_to_append
   next_message_id += 1
@@ -62,7 +74,7 @@ function send_message(message,websocket,callback_function) {
   websocket.send(JSON.stringify(message));
 }
 
-function parse_response(response,websocket) {
+function parse_response(response) {
   /** function to take in any kind of response and handle it 
    * Inputs:
    *     client_id: the id of the client that sent the original message
@@ -86,7 +98,7 @@ function parse_response(response,websocket) {
 
   // make sure we actually have a response id and a return function
   // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
-  queue_callback_function = sent_message_queue[response_id]
+  let queue_callback_function = sent_message_queue[response_id]
   if (typeof(queue_callback_function) == 'function'){
 
     let response_function = sent_message_queue[response_id];
@@ -106,14 +118,25 @@ function parse_response(response,websocket) {
 // MESSAGE CALLBACK HANDLER FUNCTIONS
 // all of the following functions must take in only one parameter,
 // the json string response recieved from the server
+
+function handle_game_action(response) {
+  /*
+   * function to handle the response to a game-action
+   *
+   * Inputs:
+   *    response: the response object recieved from the server after sending a game-action
+   *
+   * Outputs; 
+   *    None
+   */
+  console.log("HANDLING GAME-ACTION RESPONSE:",response)
+}
 function handle_create_match(response) {
   /*
    * recieves a response to the create-match operation
    * 
    * stores the match-id returned
    */
-  response = JSON.parse(response)
-
   // TODO validate json more here
 
   // the important part of a reponse is that it either 
@@ -150,6 +173,11 @@ function handle_create_match(response) {
     // record the match_id 
     MATCH_ID = result["match-id"]
     
+    const table = document.querySelector(".table");
+
+    // add event listeners to table to listen for clicks
+    // ONLY after the match has successfully been created
+    registerTable(table)
 
     //
     return
@@ -209,7 +237,7 @@ function updateClipboard(newClip) {
   );
 }
 
-function create_message_for_game_move(player_move_string,client_id) {
+function create_message_for_game_move(player_move_string) {
   /*
    * creates a game-action request message in Chimera
    * format from the move a player wants to perform
@@ -225,9 +253,16 @@ function create_message_for_game_move(player_move_string,client_id) {
    *        "move": "rock"
    *    }
    * }
+   *
+   * Inputs:
+   *    player_move_string: the string for whatever move the player is doine
+   *                        should be rock,paper,scissors,lizard,or spock
+   *                        however validation is handled by game logic
+   *                        so we don't check validity of move here
+   *
    */
   // general part of message
-  message = {};
+  let message = {};
   message.type = "request";
   message.operation = "game-action";
 
@@ -236,12 +271,12 @@ function create_message_for_game_move(player_move_string,client_id) {
   message.id = client_id;
 
   // fill in params
-  params = {};
-  params["match-id"] = "GOTTA ADD THE MATCH ID";
+  let params = {};
+  params["match-id"] = MATCH_ID
   params.action = "move"
   
   // fill in params data
-  data = {}
+  let data = {}
   data.move = player_move_string
 
   params.data = data
@@ -252,12 +287,9 @@ function create_message_for_game_move(player_move_string,client_id) {
 
 }
 
-
-
-
 // BOOTSTRAP EVENT LISTENERS
 
-function registerTable(table,websocket) {
+function registerTable(table) {
   /* function to take in a table, and add any event listeners I want
    * at least will be on click to send messages
    */
@@ -269,18 +301,19 @@ function registerTable(table,websocket) {
       // Get the word associated with the button
       let word = event.target.innerText;
       // Assume that this function returns an object with some properties
-      let message = create_message_for_game_move(word);
+      let game_action_message = create_message_for_game_move(word);
 
       // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
-      message.NEW_FIELD = "NEW_VALUE";
-      // Do something with the modified message object, such as sending it to the server or displaying it on the screen
-      // For example:
-      console.log(message);
+      game_action_message.NEW_FIELD = "NEW_VALUE";
+
+      console.log("formed message for game-action:",game_action_message);
+
+      send_message(game_action_message,websocket,handle_game_action);
     }
   });
 
 }
-function initGame(websocket) {
+function initGame() {
 
   // function to start a game upon the initialization of a websocket
   websocket.addEventListener("open", () => {
@@ -359,7 +392,7 @@ function initGame(websocket) {
   });
 }
 
-function listen(websocket) {
+function listen() {
   /** listen to any incoming message and parse it **/
   websocket.addEventListener("message", ({ data }) => {
     // receive message from the server
@@ -399,13 +432,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // GLOBAL VARIABLE ASSIGNMENT
   client_id = generate_user_id()
 
-  // add event listeners to table to listen for clicks
-
 
   // listening for someone opening a websocket
-  initGame(websocket)
+  initGame()
 
   // listen for messages
-  listen(websocket)
-
+  listen()
 });
