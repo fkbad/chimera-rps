@@ -19,6 +19,12 @@ let next_message_id = 0
 // upon the successful creation/joining of a match
 let MATCH_ID = null
 
+// client_id to be used for all messages
+// generated once DOM content is loaded 
+// used in conjunction with the `next_message_id`
+// to determine the "id" parameter of any sent message
+let client_id = null
+
 function send_message(message,websocket,callback_function) {
   /** takes a fully formatted, non-jsoned message
    * and sends it to the websocket 
@@ -38,8 +44,8 @@ function send_message(message,websocket,callback_function) {
    *              */
 
   const stringified_message_id = String(next_message_id)
-  const message_id_to_append = "-" + stringified_message_id
-  message["id"] += message_id_to_append
+  const message_id_to_append = client_id + "-" + stringified_message_id
+  message["id"] = message_id_to_append
   next_message_id += 1
 
   // make sure callback_function is actually a function
@@ -56,7 +62,7 @@ function send_message(message,websocket,callback_function) {
   websocket.send(JSON.stringify(message));
 }
 
-function parse_response(client_id,response,websocket) {
+function parse_response(response,websocket) {
   /** function to take in any kind of response and handle it 
    * Inputs:
    *     client_id: the id of the client that sent the original message
@@ -80,13 +86,13 @@ function parse_response(client_id,response,websocket) {
 
   // make sure we actually have a response id and a return function
   // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
-  let queue_callback_function = sent_message_queue[response_id]
+  queue_callback_function = sent_message_queue[response_id]
   if (typeof(queue_callback_function) == 'function'){
 
     let response_function = sent_message_queue[response_id];
     response_function(response);
 
-    //after the response function for a sent request is called, this message
+    // after the response function for a sent request is called, this message
     // has finished processing. thus we can delete this entry from the queue
     // to avoid memory problems
     delete sent_message_queue[response_id]
@@ -106,8 +112,9 @@ function handle_create_match(response) {
    * 
    * stores the match-id returned
    */
+  response = JSON.parse(response)
 
-  //TODO validate json more here
+  // TODO validate json more here
 
   // the important part of a reponse is that it either 
   // has a "result" field containing the information about the successfully
@@ -123,7 +130,7 @@ function handle_create_match(response) {
     return
   } 
 
-  //guarenteed to have either an error or result at this point
+  // guarenteed to have either an error or result at this point
   if (has_error) {
     let error = response.error
     console.log("RCVD error:",error)
@@ -139,9 +146,12 @@ function handle_create_match(response) {
       return
     }
 
+    // FUNCTION BODY HERE
     // record the match_id 
     MATCH_ID = result["match-id"]
-    console.log("assigned match_id of", MATCH_ID)
+    
+
+    //
     return
 
   } else {
@@ -217,7 +227,7 @@ function create_message_for_game_move(player_move_string,client_id) {
    * }
    */
   // general part of message
-  let message = {};
+  message = {};
   message.type = "request";
   message.operation = "game-action";
 
@@ -226,12 +236,12 @@ function create_message_for_game_move(player_move_string,client_id) {
   message.id = client_id;
 
   // fill in params
-  let params = {};
+  params = {};
   params["match-id"] = "GOTTA ADD THE MATCH ID";
   params.action = "move"
   
   // fill in params data
-  let data = {}
+  data = {}
   data.move = player_move_string
 
   params.data = data
@@ -265,14 +275,14 @@ function registerTable(table,websocket) {
       message.NEW_FIELD = "NEW_VALUE";
       // Do something with the modified message object, such as sending it to the server or displaying it on the screen
       // For example:
-      console.log("clicked button and generated corresponding message:",message);
+      console.log(message);
     }
   });
 
 }
-function initGame(id,websocket) {
+function initGame(websocket) {
 
-  //function to start a game upon the initialization of a websocket
+  // function to start a game upon the initialization of a websocket
   websocket.addEventListener("open", () => {
 
     // this returns a dictionary
@@ -294,7 +304,6 @@ function initGame(id,websocket) {
     // base message 
     let message = {
       "type": "request",
-      "id": id
     }
 
     // create callback_function variable
@@ -345,13 +354,12 @@ function initGame(id,websocket) {
       message.params = params;
 
       callback_function = handle_create_match
-      console.log("assigned create_match callback function")
     }
     send_message(message,websocket,callback_function)
   });
 }
 
-function listen(client_id,websocket) {
+function listen(websocket) {
   /** listen to any incoming message and parse it **/
   websocket.addEventListener("message", ({ data }) => {
     // receive message from the server
@@ -367,7 +375,7 @@ function listen(client_id,websocket) {
 
       case "response":
         console.log("received response <<<",message)
-        parse_response(client_id,message,websocket)
+        parse_response(message,websocket)
         break;
 
       default:
@@ -388,15 +396,16 @@ window.addEventListener("DOMContentLoaded", () => {
   const websocket = new WebSocket(websocket_address);
 
 
-  const client_id = generate_user_id()
+  // GLOBAL VARIABLE ASSIGNMENT
+  client_id = generate_user_id()
+
   // add event listeners to table to listen for clicks
 
-  registerTable(table,client_id,websocket)
-  //
+
   // listening for someone opening a websocket
-  initGame(client_id,websocket)
+  initGame(websocket)
 
   // listen for messages
-  listen(client_id,websocket)
+  listen(websocket)
 
 });
