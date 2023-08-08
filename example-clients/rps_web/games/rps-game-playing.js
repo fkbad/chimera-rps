@@ -1,63 +1,165 @@
 import {createTable}  from './rps_table.js';
 
-// adding this variable to keep track of the most 
-// recently sent message, so when the client
-// recieves a response it knows what request it is 
-// associated with. Allows for more confident parsing 
-// of incoming messages
+// global queue for all sent messages 
+// stores sent client requests via their id and associates
+// a callback function to be run when the server
+// responds to this message
 //
-// Eg: When I know that I just sent a spectate-match operation
-// then I recieve and error, I can provide more context
-// to the error
+//    sent_message_queue[request_message_id] = function_to_handle_server_response(response)
 //
-// Not sure if this would need to be a queue of some kind
-// to handle server delay. Under the situation that 
-// the client sends two messages before the server can 
-// handle the first request
-//
-
-sent_message_queue = {}
-
+let sent_message_queue = {}
 
 // increasing counter for sent out message ID's
 // this + the created client ID should form a unique id per message
 // across users
 let next_message_id = 0
 
+// variable to store this client's match id, if there is any
+// should get filled in by the create_match/join_match callback function
+// upon the successful creation/joining of a match
+let MATCH_ID = null
 
-function send_message(message,websocket) {
+function send_message(message,websocket,callback_function) {
   /** takes a fully formatted, non-jsoned message
    * and sends it to the websocket 
    *
-   * standardized through helper function to I can unify debugging statements*/
-
-  // triple equals checks if something is *exactly* null
-  // let var = null is the only thing that should trip this
-  //
-  // !== checks if somethin is ANYTHING but = null
-  // this includes being unassigned
-  //
-  // so like if I had variable instantiated like: 
-  //  let new_variable;
-  // then new_variable !== null is True
-  // whereas, if we did != null, then it would be False
-
-  // if (last_sent_unresolved_message !== null) {
-  //   // there is still some unresolved message
-  //   showMessage("tried sending message while there was an unresolved message :",last_sent_unresolved_message);
-  //   return
-  // } 
-
-  // no unresolved message
-  last_sent_unresolved_message = message
+   * standardized through helper function to I can unify debugging statements
+   *
+   * Inputs:
+   *     message: the actual message to send to the server
+   *              does not have a fully filled in message id, 
+   *              should lack the message_id sequence number
+   *     
+   *     websocket: the websocket to send the message to
+   *
+   *     callback_function: 
+   *         function to be called on the servers response
+   *         should only ever take in one argument: the whole server's message as a JSON object
+   *              */
 
   const stringified_message_id = String(next_message_id)
   const message_id_to_append = "-" + stringified_message_id
   message["id"] += message_id_to_append
   next_message_id += 1
 
+  // make sure callback_function is actually a function
+  let is_func = typeof(callback_function) == "function"
+  if (!is_func) {
+    console.log("fed callback_function :", callback_function, "that was NOT A FUNCTION")
+    return
+  }
+
+  // add message to queue with callback function
+  sent_message_queue[message.id] = callback_function
+
   console.log("sending >>> ",message)
   websocket.send(JSON.stringify(message));
+}
+
+function parse_response(client_id,response,websocket) {
+  /** function to take in any kind of response and handle it 
+   * Inputs:
+   *     client_id: the id of the client that sent the original message
+   *     response: javascript object received from the server
+   *     websocket: the websocket this client is connected on 
+   *
+   * Outputs:
+   *     nothing, on successful parsing calls the callback function
+   *              associated with the received message
+   * */
+
+  const response_has_id = response.hasOwnProperty("id")
+  if (!response_has_id) {
+    console.log("received response with no ID:",response)
+    return
+  }
+
+  // if there is an id, then lets grab and use it!
+  const response_id = response.id
+  console.log("received RESPONSE from server with id", response_id);
+
+  // make sure we actually have a response id and a return function
+  // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
+  let queue_callback_function = sent_message_queue[response_id]
+  if (typeof(queue_callback_function) == 'function'){
+
+    let response_function = sent_message_queue[response_id];
+    response_function(response);
+
+    //after the response function for a sent request is called, this message
+    // has finished processing. thus we can delete this entry from the queue
+    // to avoid memory problems
+    delete sent_message_queue[response_id]
+    
+  } else {
+    console.log("failed to find function associated with response_id")
+  }
+  
+}
+
+// MESSAGE CALLBACK HANDLER FUNCTIONS
+// all of the following functions must take in only one parameter,
+// the json string response recieved from the server
+function handle_create_match(response) {
+  /*
+   * recieves a response to the create-match operation
+   * 
+   * stores the match-id returned
+   */
+
+  //TODO validate json more here
+
+  // the important part of a reponse is that it either 
+  // has a "result" field containing the information about the successfully
+  // fulfilled request, or an "error" field 
+  let has_error = response.hasOwnProperty("error")
+  let has_result = response.hasOwnProperty("result")
+
+  if (!has_error && !has_result) {
+    console.log("recieved response to create_match that doesn't have an error nor result:",response)
+    return
+  } else if (has_error && has_result) {
+    console.log("recieved response to create_match that had error AND response:",response)
+    return
+  } 
+
+  //guarenteed to have either an error or result at this point
+  if (has_error) {
+    let error = response.error
+    console.log("RCVD error:",error)
+    return
+  } else if (has_result) {
+    // successfully created match
+    let result = response.result
+
+    let has_match_id = result.hasOwnProperty("match-id")
+
+    if (!has_match_id) {
+      console.log("recieved successful create-match response without a match-id",result)
+      return
+    }
+
+    // record the match_id 
+    MATCH_ID = result["match-id"]
+    console.log("assigned match_id of", MATCH_ID)
+    return
+
+  } else {
+      // this syntax raises an error in the console with location in code
+      throw new Error("literally should never get here")
+  }
+}
+
+// HELPER FUNCTIONS
+
+function getWebSocketServer() {
+  if (window.location.host === "fkbad.github.io") {
+    return "wss://sylv-connect4-ba23863cf42a.herokuapp.com/";
+  } else if (window.location.host === "localhost:8000") {
+    return "ws://127.0.0.1:14200";
+  } else {
+    throw new Error(`Unsupported host: ${window.location.host}`);
+  }
 }
 
 function showMessage(message) {
@@ -83,40 +185,19 @@ function generate_user_id() {
   return id
 }
 
-function getWebSocketServer() {
-  if (window.location.host === "fkbad.github.io") {
-    return "wss://sylv-connect4-ba23863cf42a.herokuapp.com/";
-  } else if (window.location.host === "localhost:8000") {
-    return "ws://127.0.0.1:14200";
-  } else {
-    throw new Error(`Unsupported host: ${window.location.host}`);
-  }
+function updateClipboard(newClip) {
+  /** takes some text and write it to clipboard */
+  navigator.clipboard.writeText(newClip).then(
+    () => {
+      /* clipboard successfully set */
+      console.log("shoulda copied [",newClip,"] to clipboard")
+    },
+    () => {
+      /* clipboard write failed */
+      console.log("couldn't write",newClip,"] to clipboard")
+    },
+  );
 }
-
-function registerTable(table,websocket) {
-  /* function to take in a table, and add any event listeners I want
-   * at least will be on click to send messages
-   */
-
-  // Add an event listener to the table div that listens to when any of the buttons are clicked
-  table.addEventListener("click", function(event) {
-    // Check if the event target is a button element
-    if (event.target.tagName == "BUTTON") {
-      // Get the word associated with the button
-      let word = event.target.innerText;
-      // Assume that this function returns an object with some properties
-      let message = create_message_for_game_move(word);
-
-      // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
-      message.NEW_FIELD = "NEW_VALUE";
-      // Do something with the modified message object, such as sending it to the server or displaying it on the screen
-      // For example:
-      console.log(message);
-    }
-  });
-
-}
-
 
 function create_message_for_game_move(player_move_string,client_id) {
   /*
@@ -136,7 +217,7 @@ function create_message_for_game_move(player_move_string,client_id) {
    * }
    */
   // general part of message
-  message = {};
+  let message = {};
   message.type = "request";
   message.operation = "game-action";
 
@@ -145,12 +226,12 @@ function create_message_for_game_move(player_move_string,client_id) {
   message.id = client_id;
 
   // fill in params
-  params = {};
+  let params = {};
   params["match-id"] = "GOTTA ADD THE MATCH ID";
   params.action = "move"
   
   // fill in params data
-  data = {}
+  let data = {}
   data.move = player_move_string
 
   params.data = data
@@ -162,6 +243,33 @@ function create_message_for_game_move(player_move_string,client_id) {
 }
 
 
+
+
+// BOOTSTRAP EVENT LISTENERS
+
+function registerTable(table,websocket) {
+  /* function to take in a table, and add any event listeners I want
+   * at least will be on click to send messages
+   */
+
+  // Add an event listener to the table div that listens to when any of the buttons are clicked
+  table.addEventListener("click", function(event) {
+    // Check if the event target is a button element
+    if (event.target.tagName == "BUTTON") {
+      // Get the word associated with the button
+      let word = event.target.innerText;
+      // Assume that this function returns an object with some properties
+      let message = create_message_for_game_move(word);
+
+      // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
+      message.NEW_FIELD = "NEW_VALUE";
+      // Do something with the modified message object, such as sending it to the server or displaying it on the screen
+      // For example:
+      console.log("clicked button and generated corresponding message:",message);
+    }
+  });
+
+}
 function initGame(id,websocket) {
 
   //function to start a game upon the initialization of a websocket
@@ -188,6 +296,11 @@ function initGame(id,websocket) {
       "type": "request",
       "id": id
     }
+
+    // create callback_function variable
+    // to be filled in depending on what message I want to send
+    let callback_function = null 
+
 
     // JOINING MATCH
     if (join_match_id) {
@@ -227,14 +340,16 @@ function initGame(id,websocket) {
         // game ID is just the lowercase Python Class name
         "game" : "rockpaperscissors",
         "player-name" : "player1"
-      }
-      message.params = params
+      };
+
+      message.params = params;
+
+      callback_function = handle_create_match
+      console.log("assigned create_match callback function")
     }
-    send_message(message,websocket)
+    send_message(message,websocket,callback_function)
   });
 }
-
-
 
 function listen(client_id,websocket) {
   /** listen to any incoming message and parse it **/
@@ -261,62 +376,6 @@ function listen(client_id,websocket) {
   });
 }
 
-function parse_response(client_id,response,websocket) {
-  /** function to take in any kind of response and handle it 
-   * Inputs:
-   *     client_id: the id of the client that sent the original message
-   *     response: javascript object received from the server
-   *     websocket: the websocket this client is connected on 
-   *
-   * Outputs:
-   *     nothing 
-   * */
-
-  const response_has_id = response.hasOwnProperty("id")
-  if (!response_has_id) {
-    console.log("received response with no ID:",response)
-    return
-  }
-
-  // if there is an id, then lets grab and use it!
-  const response_id = response.id
-  console.log("received RESPONSE from server with id", response_id);
-
-
-  // make sure we actually have a response id and a return function
-  // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
-  queue_callback_function = sent_message_queue[response_id]
-  if (typeof(queue_callback_function) == 'function'){
-
-    let response_function = sent_message_queue[response_id];
-
-    response_function(response);
-
-    //after the response function for a sent request is called, this message
-    // has finished processing. thus we can delete this entry from the queue
-    // to avoid memory problems
-    delete sent_message_queue[response_id]
-    
-  } else {
-    console.log("failed to find function associated with response_id")
-  }
-  
-}
-
-function updateClipboard(newClip) {
-  /** takes some text and write it to clipboard */
-  navigator.clipboard.writeText(newClip).then(
-    () => {
-      /* clipboard successfully set */
-      console.log("shoulda copied [",newClip,"] to clipboard")
-    },
-    () => {
-      /* clipboard write failed */
-      console.log("couldn't write",newClip,"] to clipboard")
-    },
-  );
-}
-
 
 // overall initializer, the bootstrap or "main"
 window.addEventListener("DOMContentLoaded", () => {
@@ -333,6 +392,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // add event listeners to table to listen for clicks
 
   registerTable(table,client_id,websocket)
+  //
   // listening for someone opening a websocket
   initGame(client_id,websocket)
 
