@@ -1,3 +1,4 @@
+import {createTable}  from './rps_table.js';
 
 // adding this variable to keep track of the most 
 // recently sent message, so when the client
@@ -92,27 +93,33 @@ function getWebSocketServer() {
   }
 }
 
-// overall initializer, the bootstrap or "main"
-window.addEventListener("DOMContentLoaded", () => {
-  // Open the WebSocket connection and register event handlers.
-  // port specified in main() of `app.py`
+function registerTable(table,websocket) {
+  /* function to take in a table, and add any event listeners I want
+   * at least will be on click to send messages
+   */
 
-  const websocket_address = getWebSocketServer()
-  const websocket = new WebSocket(websocket_address);
+  // Add an event listener to the table div that listens to when any of the buttons are clicked
+  table.addEventListener("click", function(event) {
+    // Check if the event target is a button element
+    if (event.target.tagName == "BUTTON") {
+      // Get the word associated with the button
+      let word = event.target.innerText;
+      // Assume that this function returns an object with some properties
+      // let message = create_message_for_game_move(word, websocket);
 
-  const user_id = generate_user_id()
-  //
-  // listening for someone opening a websocket
-  initGame(user_id,websocket)
+      let message = {"yay":"functinoing"}
+      // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
+      message.NEW_FIELD = "NEW_VALUE";
+      // Do something with the modified message object, such as sending it to the server or displaying it on the screen
+      // For example:
+      console.log(message);
+    }
+  });
 
-  // listen for messages
-  listen(user_id,websocket)
+}
 
-  const list_games_button = document.querySelector(".button")
-  send_list_message_on_click(user_id,list_games_button,websocket)
-  
 
-});
+
 
 function initGame(id,websocket) {
 
@@ -213,7 +220,6 @@ function listen(id,websocket) {
   });
 }
 
-
 // function parse_response(id,response,websocket) {
 //   /** function to take in any kind of response and handle it */
 //   
@@ -233,3 +239,26 @@ function updateClipboard(newClip) {
   );
 }
 
+
+// overall initializer, the bootstrap or "main"
+window.addEventListener("DOMContentLoaded", () => {
+
+  // Initialize the UI.
+  const table = document.querySelector(".table");
+  createTable(table)
+
+  const websocket_address = getWebSocketServer()
+  const websocket = new WebSocket(websocket_address);
+
+  // add event listeners to table to listen for clicks
+  registerTable(table,websocket)
+
+  const user_id = generate_user_id()
+  //
+  // listening for someone opening a websocket
+  initGame(user_id,websocket)
+
+  // listen for messages
+  listen(user_id,websocket)
+
+});
