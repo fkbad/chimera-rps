@@ -297,9 +297,10 @@ class RockPaperScissors(TwoPlayerGame):
         """
         threshold = self.points_to_win
 
-        # assert for type checking, 
         # done should not be called before `on_start()` which instantiates self.points
-        assert self.points is not None
+        if self.points is None:
+            return False
+
         # this check should be sufficient as `self.done` should be checked after every move
         # and since points start at 0 and can only be incremented by 1
         # checking at every change should means this is enough
@@ -428,7 +429,9 @@ class RockPaperScissors(TwoPlayerGame):
             process it and notify update
         """
         player_id = player.id
-        assert self.current_round_moves is not None
+        if self.current_round_moves is None:
+            raise exc.NotPlayerTurn
+
         assert player_id is not None
         
         # check if player can move

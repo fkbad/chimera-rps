@@ -25,7 +25,11 @@ let MATCH_ID = null
 // to determine the "id" parameter of any sent message
 let client_id = null
 
-function send_message(message,callback_function) {
+// websocket for client connection
+// global variable as it is assigned once upon page load per client 
+let websocket = null
+
+function send_message(message,websocket,callback_function) {
   /** takes a fully formatted, non-jsoned message
    * and sends it to the websocket 
    *
@@ -60,15 +64,21 @@ function send_message(message,callback_function) {
   message["id"] = message_id_to_append
   next_message_id += 1
 
+  // MAYBE SHOULD BE UNCOMMENTED
   // make sure callback_function is actually a function
-  let is_func = typeof(callback_function) == "function"
-  if (!is_func) {
-    console.log("fed callback_function :", callback_function, "that was NOT A FUNCTION")
-    return
-  }
+  // let is_func = typeof(callback_function) == "function"
+  // if (!is_func) {
+  //   console.error("fed callback_function :", callback_function, "that was NOT A FUNCTION")
+  //   return
+  // }
 
   // add message to queue with callback function
-  sent_message_queue[message.id] = callback_function
+  sent_message_queue[message.id] = callback_function;
+  //console.log("typeof send-message callback is:",typeof(callback_function));
+  //console.log("send-message callback is:",callback_function);
+
+  //console.log("typeof queue'd callback is:",typeof(sent_message_queue[message.id]));
+  //console.log("queue'd callback is:",sent_message_queue[message.id]);
 
   console.log("sending >>> ",message)
   websocket.send(JSON.stringify(message));
@@ -139,6 +149,8 @@ function handle_create_match(response) {
    */
   // TODO validate json more here
 
+  console.log("handling create match with response:",response)
+
   // the important part of a reponse is that it either 
   // has a "result" field containing the information about the successfully
   // fulfilled request, or an "error" field 
@@ -172,6 +184,7 @@ function handle_create_match(response) {
     // FUNCTION BODY HERE
     // record the match_id 
     MATCH_ID = result["match-id"]
+    console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
     
     const table = document.querySelector(".table");
 
@@ -244,8 +257,8 @@ function create_message_for_game_move(player_move_string) {
    *
    * type : request
    * operation : game_action
-   * id : client_id ONLY, as the `send_message()` function adds the 
-   *      sequence number 
+   * id : NOT FILLED IN HERE, as id assignment is controlled by `send_message`
+   *      
    * params: {
    *    match-id : 
    *    action : "move"
@@ -265,10 +278,6 @@ function create_message_for_game_move(player_move_string) {
   let message = {};
   message.type = "request";
   message.operation = "game-action";
-
-  // incomplete id, as the sequence number is appended 
-  // when `send_message()` is called
-  message.id = client_id;
 
   // fill in params
   let params = {};
@@ -294,6 +303,7 @@ function registerTable(table) {
    * at least will be on click to send messages
    */
 
+  console.log("registering table")
   // Add an event listener to the table div that listens to when any of the buttons are clicked
   table.addEventListener("click", function(event) {
     // Check if the event target is a button element
@@ -342,6 +352,7 @@ function initGame() {
     // create callback_function variable
     // to be filled in depending on what message I want to send
     let callback_function = null 
+    //console.log("callback_function should become populated below")
 
 
     // JOINING MATCH
@@ -386,7 +397,10 @@ function initGame() {
 
       message.params = params;
 
-      callback_function = handle_create_match
+      callback_function = handle_create_match; 
+      //console.log("create match callback function defined");
+      //console.log("typeof callback is:",typeof(callback_function));
+      //console.log("callback is:",callback_function);
     }
     send_message(message,websocket,callback_function)
   });
@@ -426,7 +440,9 @@ window.addEventListener("DOMContentLoaded", () => {
   createTable(table)
 
   const websocket_address = getWebSocketServer()
-  const websocket = new WebSocket(websocket_address);
+
+  // GLOBAL VARIABLE ASSIGNMENT
+  websocket = new WebSocket(websocket_address);
 
 
   // GLOBAL VARIABLE ASSIGNMENT
