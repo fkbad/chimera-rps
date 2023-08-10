@@ -204,6 +204,37 @@ function handle_create_match(response) {
 }
 
 // HELPER FUNCTIONS
+//
+function call_appropriate_callback(response) {
+  /* function to take in a valid and successful response
+   * and properly call on the callback function corresponding
+   * to the message
+   *
+   * Inputs:
+   *    response: a response that has a "result" field and 
+   *              is valid based on validate_response(), meaning that 
+   *              the request this response coresponds to was successful
+   *
+   * Outputs:
+   *    none, 
+   *
+   * Side Affects:
+   *   calls the appropriate callback for the message
+   */
+  const response_id = response.id
+
+  queue_callback_function = sent_message_queue[response_id]
+  // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
+  if (typeof(queue_callback_function) == 'function'){
+
+    let response_function = sent_message_queue[response_id];
+    response_funtion(response);
+
+  } else {
+    console.warn("failed to find function associated with response_id")
+  }
+
+}
 
 function validate_response(response) {
   /* takes in a fresh response from the server 
