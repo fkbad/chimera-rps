@@ -245,15 +245,6 @@ function get_error_log_item_from_error(error) {
    * Inputs:
    *    error: the error field of some response sent from the server
    *
-   *    of format:
-   *    error = {
-          "code": A numeric code for the error.
-          "message": A string with a brief, concise error message.
-          "data": An object containing additional data about the error. 
-                    **A more detailed error description may be 
-                    **included in a "details" member.
-        }
-   *
    * Outputs:
    *    a list item element <li> containing whatever
    *    I want it to have to display the error
@@ -275,11 +266,32 @@ function format_error_string_for_log(error) {
    * Inputs: 
    *    error: error field of a server response
    *
+   *    of format:
+   *    error = {
+          "code": A numeric code for the error.
+          "message": A string with a brief, concise error message.
+          "data": An object containing additional data about the error. 
+                    **A more detailed error description may be 
+                    **included in a "details" member.
+        }
+   *
+   *
    * Outputs:
    *    string: some string of to be used as the text for
    *            some error log entry
    */
-  return "TODO FORMAT ERROR STRING"
+  let code = error.code
+  let short_message = error.message 
+  let data = error.data
+  let details
+
+  if ("details" in data) {
+    details = data.details
+  }
+
+  output_string  = short_message + "\n" + short_message + "\n" + data + " " + details
+  
+  return output_string
 }
 
 function call_appropriate_callback(response) {
