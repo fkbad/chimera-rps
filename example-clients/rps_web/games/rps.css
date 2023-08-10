@@ -1,31 +1,37 @@
+.container {
+  display: flex; /* This displays the div as a block-level element */
+  flex-direction: row;
+  flex-wrap: no-wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
 .table {
-  position: block;
   /* center the element */
   right: 0;
   left: 0;
   margin-right: auto;
   margin-left: auto;
   /* give it dimensions */
-  min-width: 10vw;
-  max-width: 15vw;
-}
-
-.oldlogs{
-  position: absolute; /* This will take the sidebar out of the normal flow */
-  right: 5%; /* This will align the sidebar to the left edge of the page */
-  min-width: 10vw, 35ch; /* This will set the width of the sidebar to be the minimum of 10% of the viewport width or 30 characters */
-  max-width: 15vw; /* This will set the maximum width of the legend to be 35 characters */
-  word-wrap: break-word; /* This will break long words and wrap them onto the next line */
+  min-width: 30ch;
+  max-width: 50ch;
+  margin: 10px; /* This adds some space around each log */
+  padding: 5px; /* This adds some space inside each log */
 }
 
 /* This is a style ruleset for the logs class */
 .logs {
-  position:absolute;
+  position:static;
   right: 5%;
-  display: block; /* This displays the div as a block-level element */
-  width: 30%; /* This sets the width of the div to 80% of its parent's width */
+  /* https://www.reddit.com/r/webdev/comments/nvzhi0/flexbox_css_cheat_sheet/ */
+  display: flex; /* This displays the div as a block-level element */
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: flex-start;
+
+
+  /* width: 40%; /* This sets the width of the div to 80% of its parent's width */ 
   margin: 0 auto; /* This centers the div horizontally */
-  border: 1px solid black; /* This adds a border around the div */
 }
 
 /* This is a style ruleset for the log class */
@@ -35,6 +41,11 @@
   width: 40%; 
   margin: 10px; /* This adds some space around each log */
   padding: 5px; /* This adds some space inside each log */
+}
+
+#error_log {
+  /* element can grow into the remaining space */
+  flex-grow: 0;
 }
 
 fieldset {
