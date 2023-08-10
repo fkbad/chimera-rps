@@ -96,15 +96,44 @@ function parse_response(response) {
    *              associated with the received message
    * */
 
-  const response_has_id = response.hasOwnProperty("id")
-  if (!response_has_id) {
-    console.log("received response with no ID:",response)
+  const [response_is_valid,response_type] = validate_response(response);
+
+  if (response_is_valid) {
+    if (response_type == "error") {
+        raise_response_error(response)
+    } else if (response_type == "success") {
+        call_appropriate_callback(response)
+    } else {
+        throw new Error("validate_response said a response was valid, but did not provide a valid response type, instead gave:",response_type)
+    }
+    // after finishing our reponse processing by 
+    // - either the response function finishing 
+    // - or an error was raised in the error log
+    // we then delete the item from the message queue
+    // to avoid memory problems, and because there
+    // is nothing left to do with this request-response cycle
+
+    // dictionary deletes raise no errors if the 
+    // key is not actually in the dictionary, 
+    // so if the response id is not a key, this 
+    // delete will silently do nothing
+    //
+    // this should never happen as validate_reseponse
+    // should only deem a response valid if the response ID 
+    // is in the queue
+    delete sent_message_queue[response_id]
+    return
+    
+  } else {
+    // validate response should log the more specific error 
+    // that arose during processing, and have also removed
+    // entries in the queue if there was any for the ID
+    // of this response, thus we are done parsing this response
     return
   }
 
   // if there is an id, then lets grab and use it!
   const response_id = response.id
-  console.log("received RESPONSE from server with id", response_id);
 
   // make sure we actually have a response id and a return function
   // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
@@ -114,15 +143,11 @@ function parse_response(response) {
     let response_function = sent_message_queue[response_id];
     response_function(response);
 
-    // after the response function for a sent request is called, this message
-    // has finished processing. thus we can delete this entry from the queue
-    // to avoid memory problems
-    delete sent_message_queue[response_id]
     
   } else {
-    console.log("failed to find function associated with response_id")
+    console.warn("failed to find function associated with response_id")
   }
-  
+
 }
 
 // MESSAGE CALLBACK HANDLER FUNCTIONS
@@ -140,6 +165,9 @@ function handle_game_action(response) {
    *    None
    */
   console.log("HANDLING GAME-ACTION RESPONSE:",response)
+
+  
+
 }
 function handle_create_match(response) {
   /*
@@ -203,6 +231,95 @@ function handle_create_match(response) {
 
 // HELPER FUNCTIONS
 
+function validate_response(response) {
+  /* takes in a fresh response from the server 
+   * and validates that it has the correct fields and field structure.
+   *
+   *  Inputs:
+   *    chimera response message  object that is was fed into `parse_response()`
+   *
+   *  Outputs: 
+   *      list containing two elements:
+   *        [boolean, string]
+   *        boolean: True if the response is valid
+   *                 False if there are any formatting problems
+   *                  - no ID, 
+   *                  - response ID not being the message queue
+   *                  - no error or response
+   *                  - both error and response
+   *        string: (provided the response is valid),
+   *                this string is the type of response,
+   *                which will either be 
+   *                - "error", for a response with an error field
+   *                - "success", for a response with a result field
+   *                - null, for an invalid response
+   *
+   *  Side Affects:
+   *      if the response is invalid, but contains an ID 
+   *      in the queue, then we will remove that entry from the queue
+   *      
+   *      this is because I am considering invalid responses as garbage
+   *      that will not be processed any further.
+   *
+   *      but if the ID is in the queue, then it must be removed
+   *      or else it will linger unresolved, potentially 
+   *      causing memory problems
+   *   */
+
+  // the important part of a reponse is that it either 
+  // has a "result" field containing the information about the successfully
+  // fulfilled request, or an "error" field 
+  let has_error = response.hasOwnProperty("error")
+  let has_result = response.hasOwnProperty("result")
+  const response_has_id = response.hasOwnProperty("id")
+  if (!response_has_id) {
+    console.error("received response with no ID:",response)
+    return
+
+  if (!has_error && !has_result) {
+    console.error("recieved response to create_match that doesn't have an error nor result:",response)
+    return
+  } else if (has_error && has_result) {
+    console.error("recieved response to create_match that had error AND response:",response)
+    return
+  } 
+
+  // guarenteed to have either an error or result at this point
+  if (has_error) {
+    let error = response.error
+    console.log("RCVD error:",error)
+    return
+  } else if (has_result) {
+    // successfully created match
+    let result = response.result
+
+    let has_match_id = result.hasOwnProperty("match-id")
+
+    if (!has_match_id) {
+      console.log("recieved successful create-match response without a match-id",result)
+      return
+    }
+
+    // FUNCTION BODY HERE
+    // record the match_id 
+    MATCH_ID = result["match-id"]
+    console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
+    
+    const table = document.querySelector(".table");
+
+    // add event listeners to table to listen for clicks
+    // ONLY after the match has successfully been created
+    registerTable(table)
+
+    //
+    return
+
+  } else {
+      // this syntax raises an error in the console with location in code
+      throw new Error("literally should never get here")
+  }
+
+}
 function getWebSocketServer() {
   if (window.location.host === "fkbad.github.io") {
     return "wss://sylv-connect4-ba23863cf42a.herokuapp.com/";
@@ -312,9 +429,6 @@ function registerTable(table) {
       let word = event.target.innerText;
       // Assume that this function returns an object with some properties
       let game_action_message = create_message_for_game_move(word);
-
-      // Add a new field to the message object with key "NEW_FIELD" and value "NEW_VALUE"
-      game_action_message.NEW_FIELD = "NEW_VALUE";
 
       console.log("formed message for game-action:",game_action_message);
 
