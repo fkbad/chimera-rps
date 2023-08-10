@@ -121,7 +121,7 @@ function parse_response(response) {
     // this should never happen as validate_reseponse
     // should only deem a response valid if the response ID 
     // is in the queue
-    delete sent_message_queue[response_id]
+    delete sent_message_queue[response.id]
     return
     
   } else {
@@ -205,6 +205,83 @@ function handle_create_match(response) {
 
 // HELPER FUNCTIONS
 //
+
+function raise_response_error(response) {
+  /*
+   * function to take in an error response
+   * and update the error log
+   */
+  console.log("trying to update error log with response:",response)
+  const error = response.error
+
+  const error_log_item = get_error_log_item_from_error(error)
+
+  update_error_log(error_log_item)
+}
+
+function update_error_log(error_log_item) {
+  /* function to update the error log with a new item
+   *
+   * Inputs: 
+   *    error_log_item : a list item <li> with whatever text is necesarry
+   *                     with class "error_log_list_item"
+   *
+   * Outputs:
+   *    nothing
+   *
+   * Side Effects:
+   *    prepending this item to the error_log
+   */
+  let error_log_list = document.getElementById("error_log_list");
+
+  console.log("trying to prepend error item:",error_log_item)
+
+  error_log_list.prepend(error_log_item)
+}
+
+function get_error_log_item_from_error(error) {
+  /* function to return an HTML element to be added into the error log
+   *
+   * Inputs:
+   *    error: the error field of some response sent from the server
+   *
+   *    of format:
+   *    error = {
+          "code": A numeric code for the error.
+          "message": A string with a brief, concise error message.
+          "data": An object containing additional data about the error. 
+                    **A more detailed error description may be 
+                    **included in a "details" member.
+        }
+   *
+   * Outputs:
+   *    a list item element <li> containing whatever
+   *    I want it to have to display the error
+   */
+  let output_list_element = document.createElement("li")
+  let formatted_error_text = format_error_string_for_log(error)
+
+  output_list_element.textContent = formatted_error_text
+
+  output_list_element.className = "error_log_list_item"
+
+  return output_list_element
+}
+
+function format_error_string_for_log(error) {
+  /* function to take in an error from a response and format
+   * it however I want to be displayed in the error log
+   *
+   * Inputs: 
+   *    error: error field of a server response
+   *
+   * Outputs:
+   *    string: some string of to be used as the text for
+   *            some error log entry
+   */
+  return "TODO FORMAT ERROR STRING"
+}
+
 function call_appropriate_callback(response) {
   /* function to take in a valid and successful response
    * and properly call on the callback function corresponding
@@ -221,14 +298,14 @@ function call_appropriate_callback(response) {
    * Side Affects:
    *   calls the appropriate callback for the message
    */
+  console.log("trying to find appropriate callback for successful response",response)
   const response_id = response.id
 
-  queue_callback_function = sent_message_queue[response_id]
+  let queue_callback_function = sent_message_queue[response_id]
   // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
   if (typeof(queue_callback_function) == 'function'){
 
-    let response_function = sent_message_queue[response_id];
-    response_funtion(response);
+    queue_callback_function(response);
 
   } else {
     console.warn("failed to find function associated with response_id")
