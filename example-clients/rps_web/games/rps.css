@@ -6,22 +6,16 @@
   align-items: flex-start;
 }
 .table {
-  /* center the element */
-  right: 0;
-  left: 0;
-  margin-right: auto;
-  margin-left: auto;
-  /* give it dimensions */
-  min-width: 30ch;
-  max-width: 50ch;
-  margin: 10px; /* This adds some space around each log */
-  padding: 5px; /* This adds some space inside each log */
+  margin-left: 15vw;
+  /* top margin to align with the log legends */
+  margin-top: 10px;
+  flex-basis: content;
+
+  padding: 5px; 
 }
 
 /* This is a style ruleset for the logs class */
 .logs {
-  position:static;
-  right: 5%;
   /* https://www.reddit.com/r/webdev/comments/nvzhi0/flexbox_css_cheat_sheet/ */
   display: flex; /* This displays the div as a block-level element */
   flex-direction: row;
@@ -29,23 +23,46 @@
   justify-content: flex-end;
   align-items: flex-start;
 
-
-  /* width: 40%; /* This sets the width of the div to 80% of its parent's width */ 
+   width: 50%; /* This sets the width of the div to 50% of its parent's width */
   margin: 0 auto; /* This centers the div horizontally */
 }
 
-/* This is a style ruleset for the log class */
 .log {
-  display: inline-block; /* This displays each log as an inline-level block container */
-  /* This sets the width of each log to 30% of its parent's width */
-  width: 40%; 
-  margin: 10px; /* This adds some space around each log */
-  padding: 5px; /* This adds some space inside each log */
+  display: inline-block; 
+  margin: 10px; 
+  padding: 5px; 
 }
 
 #error_log {
   /* element can grow into the remaining space */
-  flex-grow: 0;
+  flex-grow: 1;
+}
+
+#table_legend {
+  background-color: #BEADFA;
+  color: white;
+  /* add shadow on all sides to simulate a text stroke */
+  text-shadow: -1px -1px 0 grey, 1px -1px 0 grey, -1px 1px 0 grey, 1px 1px 0 grey;
+}
+#table_fieldset {
+  background-color: #e0d7ff;
+  color: papayawhip;
+}
+#error_fieldset {
+  background-color: #f4a5a4;
+}
+#table_buttons {
+  /* styling for the div that contains all of the table_buttons */
+  /* make the children (RPS buttons) be in a flexbox */
+  display: flex;
+}
+.table_button {
+  /* styling for the game-playing buttons */
+
+  /* by allowing all buttons to grow, they become equally spaced */
+  flex-grow: 1;
+  margin: 2px;
+ 
 }
 
 fieldset {
