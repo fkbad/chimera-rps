@@ -179,54 +179,28 @@ function handle_create_match(response) {
 
   console.log("handling create match with response:",response)
 
-  // the important part of a reponse is that it either 
-  // has a "result" field containing the information about the successfully
-  // fulfilled request, or an "error" field 
-  let has_error = response.hasOwnProperty("error")
-  let has_result = response.hasOwnProperty("result")
+  // successfully created match
+  let result = response.result
 
-  if (!has_error && !has_result) {
-    console.log("recieved response to create_match that doesn't have an error nor result:",response)
+  let has_match_id = result.hasOwnProperty("match-id")
+
+  if (!has_match_id) {
+    console.error("recieved successful create-match response without a match-id",result)
     return
-  } else if (has_error && has_result) {
-    console.log("recieved response to create_match that had error AND response:",response)
-    return
-  } 
-
-  // guarenteed to have either an error or result at this point
-  if (has_error) {
-    let error = response.error
-    console.log("RCVD error:",error)
-    return
-  } else if (has_result) {
-    // successfully created match
-    let result = response.result
-
-    let has_match_id = result.hasOwnProperty("match-id")
-
-    if (!has_match_id) {
-      console.log("recieved successful create-match response without a match-id",result)
-      return
-    }
-
-    // FUNCTION BODY HERE
-    // record the match_id 
-    MATCH_ID = result["match-id"]
-    console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
-    
-    const table = document.querySelector(".table");
-
-    // add event listeners to table to listen for clicks
-    // ONLY after the match has successfully been created
-    registerTable(table)
-
-    //
-    return
-
-  } else {
-      // this syntax raises an error in the console with location in code
-      throw new Error("literally should never get here")
   }
+
+  // FUNCTION BODY HERE
+  // record the match_id 
+  MATCH_ID = result["match-id"]
+  console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
+  
+  const table = document.querySelector(".table");
+
+  // add event listeners to table to listen for clicks
+  // ONLY after the match has successfully been created
+  registerTable(table)
+
+  return
 }
 
 // HELPER FUNCTIONS
@@ -266,59 +240,74 @@ function validate_response(response) {
    *      causing memory problems
    *   */
 
+  // default values for return values 
+  let is_response_valid = false
+  let response_type = null
   // the important part of a reponse is that it either 
   // has a "result" field containing the information about the successfully
   // fulfilled request, or an "error" field 
-  let has_error = response.hasOwnProperty("error")
-  let has_result = response.hasOwnProperty("result")
+  const response_has_error = response.hasOwnProperty("error")
+  const response_has_result = response.hasOwnProperty("result")
   const response_has_id = response.hasOwnProperty("id")
+
+  // variable to keep track of whether the ID of
+  // the response has an entry in the queue
+  // if the response lacks an id field, this will still
+  // evaluate to false
+  let response_id_in_queue = response.id in sent_message_queue
+
+  // check all different error cases
+  // no id
+  // id not in queue
+  // error & result
+  // !err & !res
   if (!response_has_id) {
     console.error("received response with no ID:",response)
-    return
 
-  if (!has_error && !has_result) {
-    console.error("recieved response to create_match that doesn't have an error nor result:",response)
-    return
-  } else if (has_error && has_result) {
-    console.error("recieved response to create_match that had error AND response:",response)
-    return
-  } 
+  } else if (!response_has_error && !response_has_result) {
+    console.error("recieved response that doesn't have an error nor result:",response)
 
-  // guarenteed to have either an error or result at this point
-  if (has_error) {
-    let error = response.error
-    console.log("RCVD error:",error)
-    return
-  } else if (has_result) {
-    // successfully created match
-    let result = response.result
+  } else if (response_has_error && response_has_result) {
+    console.error("recieved response that had error AND response:",response)
 
-    let has_match_id = result.hasOwnProperty("match-id")
-
-    if (!has_match_id) {
-      console.log("recieved successful create-match response without a match-id",result)
-      return
-    }
-
-    // FUNCTION BODY HERE
-    // record the match_id 
-    MATCH_ID = result["match-id"]
-    console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
-    
-    const table = document.querySelector(".table");
-
-    // add event listeners to table to listen for clicks
-    // ONLY after the match has successfully been created
-    registerTable(table)
-
-    //
-    return
+  } else if (!response_id_in_queue) {
+    // if the code has gotten up to this `else if`, 
+    // that means that the response has an 
+    // "id" field and has either an error or a result
+    // so if that id of a properly formatted message
+    // is not in the queue, then we've received a response that 
+    // doesn't correspond to any sent out messages
+    // 
+    // (potential TODO) add a sent_message_id history
+    // so we can check if this response is to a previous message
+    // or just sent erroenously
+    console.error("recieved valid response with message_id not in the message queue",response,JSON.stringify(sent_message_queue,null,2))
 
   } else {
-      // this syntax raises an error in the console with location in code
-      throw new Error("literally should never get here")
+    // if none of the above statements have gotten triggered
+    // then we have a valid response
+    is_response_valid = true
+
+    if (response_has_error) {
+      response_type = "error"
+    } else if (response_has_result) {
+      // checking this way to guarentee I'm
+      // only assigning the type
+      // when the response has it, instead
+      // of doing `if error, else`
+      response_type = "success"
+    } 
   }
 
+  // final check to see if we need to delete an entry
+  // in the queue for an invalid message
+  if (response_id_in_queue && !is_response_valid) {
+    console.log("removing message queue item for invalid response",response)
+    delete sent_message_queue[response.id]
+  }
+
+  // finally, return whatever has been filled in
+  return [is_response_valid,response_type]
 }
 function getWebSocketServer() {
   if (window.location.host === "fkbad.github.io") {
