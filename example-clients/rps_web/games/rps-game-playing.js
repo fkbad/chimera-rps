@@ -284,13 +284,15 @@ function format_error_string_for_log(error) {
   let short_message = error.message 
   let data = error.data
   let details
+  let output_string
 
   if ("details" in data) {
     details = data.details
+    output_string = details
+  } else {
+    output_string = short_message
   }
 
-  output_string  = short_message + "\n" + short_message + "\n" + data + " " + details
-  
   return output_string
 }
 
