@@ -1,4 +1,4 @@
-import {createTable}  from './rps_table.js';
+import { createTable } from './rps_table.js';
 
 // global queue for all sent messages 
 // stores sent client requests via their id and associates
@@ -29,7 +29,7 @@ let client_id = null
 // global variable as it is assigned once upon page load per client 
 let websocket = null
 
-function send_message(message,websocket,callback_function) {
+function send_message(message, websocket, callback_function) {
   /** takes a fully formatted, non-jsoned message
    * and sends it to the websocket 
    *
@@ -55,7 +55,7 @@ function send_message(message,websocket,callback_function) {
 
   const already_has_id = message.hasOwnProperty("id")
   if (already_has_id) {
-    console.error("message giving to send_message that already had ID field",message)
+    console.error("message giving to send_message that already had ID field", message)
     return
   }
   const stringified_message_id = String(next_message_id)
@@ -80,7 +80,7 @@ function send_message(message,websocket,callback_function) {
   //console.log("typeof queue'd callback is:",typeof(sent_message_queue[message.id]));
   //console.log("queue'd callback is:",sent_message_queue[message.id]);
 
-  console.log("sending >>> ",message)
+  console.log("sending >>> ", message)
   websocket.send(JSON.stringify(message));
 }
 
@@ -96,15 +96,15 @@ function parse_response(response) {
    *              associated with the received message
    * */
 
-  const [response_is_valid,response_type] = validate_response(response);
+  const [response_is_valid, response_type] = validate_response(response);
 
   if (response_is_valid) {
     if (response_type == "error") {
-        raise_response_error(response)
+      raise_response_error(response)
     } else if (response_type == "success") {
-        call_appropriate_callback(response)
+      call_appropriate_callback(response)
     } else {
-        throw new Error("validate_response said a response was valid, but did not provide a valid response type, instead gave:",response_type)
+      throw new Error("validate_response said a response was valid, but did not provide a valid response type, instead gave:", response_type)
     }
     // after finishing our reponse processing by 
     // - either the response function finishing 
@@ -123,7 +123,7 @@ function parse_response(response) {
     // is in the queue
     delete sent_message_queue[response.id]
     return
-    
+
   } else {
     // validate response should log the more specific error 
     // that arose during processing, and have also removed
@@ -151,7 +151,7 @@ function handle_join_match(response) {
   let match_id = search_params.get("join");
   MATCH_ID = match_id;
 
-  console.log("successfully joined match",MATCH_ID)
+  console.log("successfully joined match", MATCH_ID)
 
   // add event listeners to table to listen for clicks
   const table = document.querySelector(".table");
@@ -171,7 +171,7 @@ function handle_game_action(response) {
 
   // update move log
   // update the board
-  console.log("HANDLING GAME-ACTION RESPONSE:",response)
+  console.log("HANDLING GAME-ACTION RESPONSE:", response)
   const result = response.result
 
   const move_log_item = get_move_log_item_from_result(result)
@@ -186,7 +186,7 @@ function handle_create_match(response) {
    */
   // TODO validate json more here
 
-  console.log("handling create match with response:",response)
+  console.log("handling create match with response:", response)
 
   // successfully created match
   let result = response.result
@@ -194,15 +194,15 @@ function handle_create_match(response) {
   let has_match_id = result.hasOwnProperty("match-id")
 
   if (!has_match_id) {
-    console.error("recieved successful create-match response without a match-id",result)
+    console.error("recieved successful create-match response without a match-id", result)
     return
   }
 
   // FUNCTION BODY HERE
   // record the match_id 
   MATCH_ID = result["match-id"]
-  console.log("MATCH ID global variable assigned to: \"",MATCH_ID,"\"")
-  
+  console.log("MATCH ID global variable assigned to: \"", MATCH_ID, "\"")
+
   const table = document.querySelector(".table");
 
   // add event listeners to table to listen for clicks
@@ -218,6 +218,27 @@ function handle_create_match(response) {
 
 // HELPER FUNCTIONS
 
+function format_move_string_for_log(result) {
+  /* function to take in a result from a move game-action response 
+   * and return whatever text I want in the corresponding
+   * move-log item
+   *
+   * Inputs: 
+   *    result section of succesful game-action response sent from server
+   *    of format:
+   *    result = {
+   *      "move" : move_string
+   *    }
+   *
+   * Outputs:
+   *    string: some string of to be used as the text for
+   *            some error log entry
+   */
+  let move_string = result.move;
+  let output = "Played: " + move_string
+  return output
+
+}
 function get_move_log_item_from_result(result) {
   /* function to return an appropriate list item
    * for a succesful move
@@ -230,8 +251,7 @@ function get_move_log_item_from_result(result) {
    */
   let output_list_element = document.createElement("li")
 
-  // let formatted_move_text = format_move_string_for_log(result)
-  let formatted_move_text = "DUMMY MOVE TEXT HERE"
+  let formatted_move_text = format_move_string_for_log(result)
 
   output_list_element.textContent = formatted_move_text
 
@@ -255,9 +275,9 @@ function update_move_log(move_log_item) {
    */
   let move_log_list = document.getElementById("move_log_list");
 
-  console.log("trying to prepend move item:",move_log_item)
+  console.log("trying to prepend move item:", move_log_item)
 
-  move_log_list.prepend(move_log_item)
+  move_log_list.append(move_log_item)
 }
 
 function populate_join_buttons() {
@@ -303,7 +323,7 @@ function populate_join_buttons() {
   // this for loop syntax gets the keys in the object
   for (let button_uri in buttons_and_links) {
     let button = buttons_and_links[button_uri]
-    button.addEventListener("click",function() {
+    button.addEventListener("click", function() {
       updateClipboard(button_uri)
     });
 
@@ -312,7 +332,7 @@ function populate_join_buttons() {
   };
 }
 
-function  get_spectate_link_uri() {
+function get_spectate_link_uri() {
   /* function to generate the spectate link for a match 
    * 
    * Inputs: 
@@ -326,7 +346,7 @@ function  get_spectate_link_uri() {
   // - base URI (localhost or whatever/games/rps.html)
   // - the game_id of the created match (in the url with ?game_id=rps or =rpsls)
   // - the MATCH_ID to give as the argument in ?spectate
-  
+
   //first get game_id
   // Get the current URL object 
   const current_url = new URL(window.location.href);
@@ -342,8 +362,8 @@ function  get_spectate_link_uri() {
   // empty so we can manually add the only two we want
   let output_search_params = new URLSearchParams();
 
-  output_search_params.append("game_id",game_id)
-  output_search_params.append("spectate",MATCH_ID)
+  output_search_params.append("game_id", game_id)
+  output_search_params.append("spectate", MATCH_ID)
 
   // Set the new search string to the URL object 
   // this preserves the origin and pathname
@@ -359,7 +379,7 @@ function  get_spectate_link_uri() {
 
 
 }
-function  get_join_link_uri() {
+function get_join_link_uri() {
   /* function to generate the join link for a match 
    * 
    * Inputs: 
@@ -373,7 +393,7 @@ function  get_join_link_uri() {
   // - base URI (localhost or whatever/games/rps.html)
   // - the game_id of the created match (in the url with ?game_id=rps or =rpsls)
   // - the MATCH_ID to give as the argument in ?join
-  
+
   //first get game_id
   // Get the current URL object 
   const current_url = new URL(window.location.href);
@@ -389,8 +409,8 @@ function  get_join_link_uri() {
   // empty so we can manually add the only two we want
   let output_search_params = new URLSearchParams();
 
-  output_search_params.append("game_id",game_id)
-  output_search_params.append("join",MATCH_ID)
+  output_search_params.append("game_id", game_id)
+  output_search_params.append("join", MATCH_ID)
 
   // Set the new search string to the URL object 
   // this preserves the origin and pathname
@@ -411,7 +431,7 @@ function raise_response_error(response) {
    * function to take in an error response
    * and update the error log
    */
-  console.log("trying to update error log with response:",response)
+  console.log("trying to update error log with response:", response)
   const error = response.error
 
   const error_log_item = get_error_log_item_from_error(error)
@@ -434,7 +454,7 @@ function update_error_log(error_log_item) {
    */
   let error_log_list = document.getElementById("error_log_list");
 
-  console.log("trying to prepend error item:",error_log_item)
+  console.log("trying to prepend error item:", error_log_item)
 
   error_log_list.prepend(error_log_item)
 }
@@ -481,7 +501,7 @@ function format_error_string_for_log(error) {
    *            some error log entry
    */
   // let code = error.code
-  let short_message = error.message 
+  let short_message = error.message
 
   // data is optional
   let data = error.data
@@ -518,12 +538,12 @@ function call_appropriate_callback(response) {
    * Side Affects:
    *   calls the appropriate callback for the message
    */
-  console.log("trying to find appropriate callback for successful response",response)
+  console.log("trying to find appropriate callback for successful response", response)
   const response_id = response.id
 
   let queue_callback_function = sent_message_queue[response_id]
   // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
-  if (typeof(queue_callback_function) == 'function'){
+  if (typeof (queue_callback_function) == 'function') {
 
     queue_callback_function(response);
 
@@ -590,13 +610,13 @@ function validate_response(response) {
   // error & result
   // !err & !res
   if (!response_has_id) {
-    console.error("received response with no ID:",response)
+    console.error("received response with no ID:", response)
 
   } else if (!response_has_error && !response_has_result) {
-    console.error("recieved response that doesn't have an error nor result:",response)
+    console.error("recieved response that doesn't have an error nor result:", response)
 
   } else if (response_has_error && response_has_result) {
-    console.error("recieved response that had error AND response:",response)
+    console.error("recieved response that had error AND response:", response)
 
   } else if (!response_id_in_queue) {
     // if the code has gotten up to this `else if`, 
@@ -609,7 +629,7 @@ function validate_response(response) {
     // (potential TODO) add a sent_message_id history
     // so we can check if this response is to a previous message
     // or just sent erroenously
-    console.error("recieved valid response with message_id not in the message queue",response,JSON.stringify(sent_message_queue,null,2))
+    console.error("recieved valid response with message_id not in the message queue", response, JSON.stringify(sent_message_queue, null, 2))
 
   } else {
     // if none of the above statements have gotten triggered
@@ -624,18 +644,18 @@ function validate_response(response) {
       // when the response has it, instead
       // of doing `if error, else`
       response_type = "success"
-    } 
+    }
   }
 
   // final check to see if we need to delete an entry
   // in the queue for an invalid message
   if (response_id_in_queue && !is_response_valid) {
-    console.log("removing message queue item for invalid response",response)
+    console.log("removing message queue item for invalid response", response)
     delete sent_message_queue[response.id]
   }
 
   // finally, return whatever has been filled in
-  return [is_response_valid,response_type]
+  return [is_response_valid, response_type]
 }
 function getWebSocketServer() {
   if (window.location.host === "fkbad.github.io") {
@@ -662,7 +682,7 @@ function generate_user_id() {
   const port = location.port
 
   // https://stackoverflow.com/a/68470365
-  const random_string = (len, chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+  const random_string = (len, chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
   const salt = random_string(5);
 
   const id = hostname + "-" + port + '- ' + salt;
@@ -673,11 +693,11 @@ function updateClipboard(newClip) {
   navigator.clipboard.writeText(newClip).then(
     () => {
       /* clipboard successfully set */
-      console.log("shoulda copied [",newClip,"] to clipboard");
+      console.log("shoulda copied [", newClip, "] to clipboard");
     },
     () => {
       /* clipboard write failed */
-      console.log("couldn't write",newClip,"to clipboard");
+      console.log("couldn't write", newClip, "to clipboard");
     },
   );
 }
@@ -715,7 +735,7 @@ function create_message_for_game_move(player_move_string) {
   let params = {};
   params["match-id"] = MATCH_ID
   params.action = "move"
-  
+
   // fill in params data
   let data = {}
   data.move = player_move_string
@@ -745,9 +765,9 @@ function registerTable(table) {
       // Assume that this function returns an object with some properties
       let game_action_message = create_message_for_game_move(word);
 
-      console.log("formed message for game-action:",game_action_message);
+      console.log("formed message for game-action:", game_action_message);
 
-      send_message(game_action_message,websocket,handle_game_action);
+      send_message(game_action_message, websocket, handle_game_action);
     }
   });
 
@@ -780,7 +800,7 @@ function initGame() {
 
     // create callback_function variable
     // to be filled in depending on what message I want to send
-    let callback_function = null 
+    let callback_function = null
 
     // JOINING MATCH
     if (join_match_id) {
@@ -791,14 +811,14 @@ function initGame() {
         // TODO remove these once we've updated chimera to 
         // not need a game parameter for Join and Create match
         "game": "rockpaperscissors",
-        "match-id" : join_match_id,
-        "player-name" : "player2"
+        "match-id": join_match_id,
+        "player-name": "player2"
       }
       message.params = params
       callback_function = handle_join_match
 
 
-    // SPECTATING MATCH
+      // SPECTATING MATCH
     } else if (spectate_match_id) {
       // spectating match
       message.operation = "spectate-match"
@@ -806,31 +826,31 @@ function initGame() {
         // TODO remove these once we've updated chimera to 
         // not need a game parameter for Join and Create match
         "game": "rockpaperscissors",
-        "match-id" : spectate_match_id,
-        "player-name" : "player2"
+        "match-id": spectate_match_id,
+        "player-name": "player2"
       }
       message.params = params
 
-    // CREATING MATCH
-    } else  { 
+      // CREATING MATCH
+    } else {
       // TODO make global utils to store the information
       // about message format so message.operation = ... 
       // could be a global variable call
       message.operation = "create-match"
       const params = {
         // game ID is just the lowercase Python Class name
-        "game" : "rockpaperscissors",
-        "player-name" : "player1"
+        "game": "rockpaperscissors",
+        "player-name": "player1"
       };
 
       message.params = params;
 
-      callback_function = handle_create_match; 
+      callback_function = handle_create_match;
       //console.log("create match callback function defined");
       //console.log("typeof callback is:",typeof(callback_function));
       //console.log("callback is:",callback_function);
     }
-    send_message(message,websocket,callback_function)
+    send_message(message, websocket, callback_function)
   });
 }
 
@@ -845,12 +865,12 @@ function listen() {
         break;
 
       case "notification":
-        console.log("received notification <<<",message)
+        console.log("received notification <<<", message)
         break;
 
       case "response":
-        console.log("received response <<<",message)
-        parse_response(message,websocket)
+        console.log("received response <<<", message)
+        parse_response(message, websocket)
         break;
 
       default:

@@ -42,6 +42,24 @@
   margin: 10px; 
 }
 
+#move_log_list {
+  list-style: none;
+  padding-left: 0;
+}
+#move_log_list li {
+  counter-increment: steps;
+}
+#move_log_list li::before {
+  content: "Round " counter(steps) ")";
+  margin-right: .5rem;
+  color: #ff6f00;
+}
+
+
+#move_log {
+  /* element can grow into the remaining space */
+  flex-grow: 1;
+}
 #error_log {
   /* element can grow into the remaining space */
   flex-grow: 1;
@@ -53,10 +71,12 @@
   /* add shadow on all sides to simulate a text stroke */
   text-shadow: -1px -1px 0 grey, 1px -1px 0 grey, -1px 1px 0 grey, 1px 1px 0 grey;
 }
+
 #table_fieldset {
   background-color: #e0d7ff;
   color: papayawhip;
 }
+
 #error_fieldset {
   background-color: #f4a5a4;
 }
