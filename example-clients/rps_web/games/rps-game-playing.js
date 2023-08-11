@@ -172,10 +172,11 @@ function handle_game_action(response) {
   // update move log
   // update the board
   console.log("HANDLING GAME-ACTION RESPONSE:",response)
+  const result = response.result
 
+  const move_log_item = get_move_log_item_from_result(result)
 
-  
-
+  update_move_log(move_log_item)
 }
 function handle_create_match(response) {
   /*
@@ -216,6 +217,48 @@ function handle_create_match(response) {
 }
 
 // HELPER FUNCTIONS
+
+function get_move_log_item_from_result(result) {
+  /* function to return an appropriate list item
+   * for a succesful move
+   * 
+   * Inputs:
+   *    the result section of a successful game_action response
+   *
+   * Ouputs:
+   *    html <li> containing the desired text to display a move
+   */
+  let output_list_element = document.createElement("li")
+
+  // let formatted_move_text = format_move_string_for_log(result)
+  let formatted_move_text = "DUMMY MOVE TEXT HERE"
+
+  output_list_element.textContent = formatted_move_text
+
+  output_list_element.className = "move_log_list_item"
+
+  return output_list_element
+}
+
+function update_move_log(move_log_item) {
+  /* function to update the move log with a new item
+   *
+   * Inputs: 
+   *    move_log_item : a list item <li> with whatever text is necesarry
+   *                     with class "move_log_list_item"
+   *
+   * Outputs:
+   *    nothing
+   *
+   * Side Effects:
+   *    prepending this item to the move_log
+   */
+  let move_log_list = document.getElementById("move_log_list");
+
+  console.log("trying to prepend move item:",move_log_item)
+
+  move_log_list.prepend(move_log_item)
+}
 
 function populate_join_buttons() {
   /* function to create buttons that on click
