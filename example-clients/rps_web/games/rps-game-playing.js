@@ -200,12 +200,66 @@ function handle_create_match(response) {
   // ONLY after the match has successfully been created
   registerTable(table)
 
+  // add join and spectate buttons with the appropriate links 
+  // now that we have the match id
+  populate_join_buttons()
+
   return
 }
 
 // HELPER FUNCTIONS
-//
 
+function populate_join_buttons() {
+  /* function to create buttons that on click
+   * copy the proper join and spectate links to clipboard
+   *
+   * buttons are added to the "match_actions" classed div
+   *
+   * Inputs: 
+   *    none, will instead grab from the global MATCH_ID
+   *    which is assigned in handle_create_match before this function is called
+   *
+   * Outputs:
+   *    none, will instead append buttons to the match_actions div
+   */
+  console.log("trying to populate match buttons")
+  let join_button = document.createElement("button")
+  let spectate_button = document.createElement("button")
+
+  join_button.className = "game_action_button"
+  join_button.id = "copy_join_link_button"
+
+  spectate_button.className = "game_action_button"
+  spectate_button.id = "copy_spectate_link_button"
+
+  // const join_uri = get_join_link_uri()
+  // const spectate_uri = get_spectate_link_uri()
+  const join_uri = "TEMP JOIN URI"
+  const spectate_uri = "TEMP SPECTATE URI"
+
+  join_button.textContent = "Copy Join Link"
+  spectate_button.textContent = "Copy Spectate Link"
+
+
+  // get the soon-to-parent element
+  let parent = document.getElementById("match_actions")
+
+  let buttons_and_links = {};
+  buttons_and_links[join_uri] = join_button;
+  buttons_and_links[spectate_uri] = spectate_button;
+
+  // add event listeners
+  // this for loop syntax gets the keys in the object
+  for (let button_uri in buttons_and_links) {
+    let button = buttons_and_links[button_uri]
+    button.addEventListener("click",function() {
+      updateClipboard(button_uri)
+    });
+
+    // add the button to the parent div
+    parent.appendChild(button)
+  };
+}
 function raise_response_error(response) {
   /*
    * function to take in an error response
@@ -280,7 +334,7 @@ function format_error_string_for_log(error) {
    *    string: some string of to be used as the text for
    *            some error log entry
    */
-  let code = error.code
+  // let code = error.code
   let short_message = error.message 
   let data = error.data
   let details
@@ -456,24 +510,22 @@ function generate_user_id() {
   const port = location.port
 
   // https://stackoverflow.com/a/68470365
-  const random_string = (len, chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('')
-  const salt = random_string(5)
+  const random_string = (len, chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('');
+  const salt = random_string(5);
 
-  const id = hostname + "-" + port + "-" + salt 
-
-  return id
+  const id = hostname + "-" + port + '- ' + salt;
+  return id;
 }
 
 function updateClipboard(newClip) {
-  /** takes some text and write it to clipboard */
   navigator.clipboard.writeText(newClip).then(
     () => {
       /* clipboard successfully set */
-      console.log("shoulda copied [",newClip,"] to clipboard")
+      console.log("shoulda copied [",newClip,"] to clipboard");
     },
     () => {
       /* clipboard write failed */
-      console.log("couldn't write",newClip,"] to clipboard")
+      console.log("couldn't write",newClip,"to clipboard");
     },
   );
 }
@@ -577,8 +629,6 @@ function initGame() {
     // create callback_function variable
     // to be filled in depending on what message I want to send
     let callback_function = null 
-    //console.log("callback_function should become populated below")
-
 
     // JOINING MATCH
     if (join_match_id) {

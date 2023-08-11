@@ -5,6 +5,16 @@
   justify-content: center;
   align-items: flex-start;
 }
+
+#match_actions {
+  /* want to make this a vertical flex box that can store game action buttons */
+  /* like the "copy join link" and "copy spectate link" */
+  display: flex;
+  flex-direction: column;
+  flex-wrap: no-wrap;
+}
+
+
 .table {
   margin-left: 15vw;
   /* top margin to align with the log legends */
