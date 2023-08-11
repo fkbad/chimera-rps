@@ -131,28 +131,32 @@ function parse_response(response) {
     // of this response, thus we are done parsing this response
     return
   }
-
-  // if there is an id, then lets grab and use it!
-  const response_id = response.id
-
-  // make sure we actually have a response id and a return function
-  // https://stackoverflow.com/questions/13417000/synchronous-request-with-websockets
-  let queue_callback_function = sent_message_queue[response_id]
-  if (typeof(queue_callback_function) == 'function'){
-
-    let response_function = sent_message_queue[response_id];
-    response_function(response);
-
-    
-  } else {
-    console.warn("failed to find function associated with response_id")
-  }
-
 }
 
 // MESSAGE CALLBACK HANDLER FUNCTIONS
 // all of the following functions must take in only one parameter,
 // the json string response recieved from the server
+
+function handle_join_match(response) {
+  /* function to handle the successful response to 
+   * joining a match
+   *
+   * Inputs: 
+   *    response: the response object recieved from the server after sending a 
+   *              join-match request
+   */
+
+  //assign match ID
+  let search_params = new URLSearchParams(window.location.search);
+  let match_id = search_params.get("join");
+  MATCH_ID = match_id;
+
+  console.log("successfully joined match",MATCH_ID)
+
+  // add event listeners to table to listen for clicks
+  const table = document.querySelector(".table");
+  registerTable(table)
+}
 
 function handle_game_action(response) {
   /*
@@ -164,7 +168,11 @@ function handle_game_action(response) {
    * Outputs; 
    *    None
    */
+
+  // update move log
+  // update the board
   console.log("HANDLING GAME-ACTION RESPONSE:",response)
+
 
   
 
@@ -232,10 +240,10 @@ function populate_join_buttons() {
   spectate_button.className = "game_action_button"
   spectate_button.id = "copy_spectate_link_button"
 
-  // const join_uri = get_join_link_uri()
-  // const spectate_uri = get_spectate_link_uri()
-  const join_uri = "TEMP JOIN URI"
-  const spectate_uri = "TEMP SPECTATE URI"
+  const join_uri = get_join_link_uri()
+  const spectate_uri = get_spectate_link_uri()
+  // const join_uri = "TEMP JOIN URI"
+  // const spectate_uri = "TEMP SPECTATE URI"
 
   join_button.textContent = "Copy Join Link"
   spectate_button.textContent = "Copy Spectate Link"
@@ -259,6 +267,101 @@ function populate_join_buttons() {
     // add the button to the parent div
     parent.appendChild(button)
   };
+}
+
+function  get_spectate_link_uri() {
+  /* function to generate the spectate link for a match 
+   * 
+   * Inputs: 
+   *    none, will call on the global MATCH_ID
+   *
+   * Outputs
+   *    string: the full URI to spectate the match
+   */
+
+  // to construct the URI we need:
+  // - base URI (localhost or whatever/games/rps.html)
+  // - the game_id of the created match (in the url with ?game_id=rps or =rpsls)
+  // - the MATCH_ID to give as the argument in ?spectate
+  
+  //first get game_id
+  // Get the current URL object 
+  const current_url = new URL(window.location.href);
+
+  // Get the search parameters object 
+  let search_params = new URLSearchParams(current_url.search);
+
+  // extract only the game_id
+  let game_id = search_params.get("game_id");
+  console.log(game_id)
+
+  // make the search params for outputting
+  // empty so we can manually add the only two we want
+  let output_search_params = new URLSearchParams();
+
+  output_search_params.append("game_id",game_id)
+  output_search_params.append("spectate",MATCH_ID)
+
+  // Set the new search string to the URL object 
+  // this preserves the origin and pathname
+  // of the current_url while changing the search parameters
+  current_url.search = output_search_params.toString();
+
+  // Get the new URI as a string 
+  const spectate_uri = current_url.toString();
+  console.log("made spectate link:", spectate_uri);
+
+  return spectate_uri
+
+
+
+}
+function  get_join_link_uri() {
+  /* function to generate the join link for a match 
+   * 
+   * Inputs: 
+   *    none, will call on the global MATCH_ID
+   *
+   * Outputs
+   *    string: the full URI to join the match
+   */
+
+  // to construct the URI we need:
+  // - base URI (localhost or whatever/games/rps.html)
+  // - the game_id of the created match (in the url with ?game_id=rps or =rpsls)
+  // - the MATCH_ID to give as the argument in ?join
+  
+  //first get game_id
+  // Get the current URL object 
+  const current_url = new URL(window.location.href);
+
+  // Get the search parameters object 
+  let search_params = new URLSearchParams(current_url.search);
+
+  // extract only the game_id
+  let game_id = search_params.get("game_id");
+  console.log(game_id)
+
+  // make the search params for outputting
+  // empty so we can manually add the only two we want
+  let output_search_params = new URLSearchParams();
+
+  output_search_params.append("game_id",game_id)
+  output_search_params.append("join",MATCH_ID)
+
+  // Set the new search string to the URL object 
+  // this preserves the origin and pathname
+  // of the current_url while changing the search parameters
+  current_url.search = output_search_params.toString();
+
+  // Get the new URI as a string 
+  const join_uri = current_url.toString();
+  console.log("made join link:", join_uri);
+
+  return join_uri
+
+
+
 }
 function raise_response_error(response) {
   /*
@@ -336,13 +439,19 @@ function format_error_string_for_log(error) {
    */
   // let code = error.code
   let short_message = error.message 
+
+  // data is optional
   let data = error.data
   let details
   let output_string
 
-  if ("details" in data) {
-    details = data.details
-    output_string = details
+  if (data) {
+    if ("details" in data) {
+      details = data.details
+      output_string = details
+    } else {
+      output_string = short_message
+    }
   } else {
     output_string = short_message
   }
@@ -643,6 +752,7 @@ function initGame() {
         "player-name" : "player2"
       }
       message.params = params
+      callback_function = handle_join_match
 
 
     // SPECTATING MATCH
