@@ -17,12 +17,113 @@
 
 .table {
   margin-left: 15vw;
-  /* top margin to align with the log legends */
-  margin-top: 10px;
+  /* flex sizing within the overall container */
   flex-basis: content;
 
+  /* making this also a flex container */
+  /* to put the display and moves in  */
+  display: flex;
+  /* put the display and moves on top of one another */
+  flex-direction: column;
+  /* I think this should stack the elements from the bottom  */
+  justify-content: flex-end;
+  /* I want the items to be centered relative to one another */
+  align-items: center;
+
   padding: 5px; 
+
+  max-width: 40vw;
+  max-height: 100vw;
 }
+
+/* div for the entire display of the match  
+* flex child of table*/
+#table_display {
+  /* fine with the display taking more space and not growing the move box */
+  flex-grow: 1;
+  /* "content" apparently means that it will be sized based on it's content, which I like the idea of  */
+  flex-basis: content;
+  width: 30vw;
+  display: flex;
+}
+/* fieldset that stores the boxes div and legend*/
+#table_display_fieldset {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap:nowrap;
+  justify-content: space-around;
+}
+/* legend annotating the fieldset / display */
+#table_display_legend {
+  margin: 5px;
+}
+/* div containing the boxes*/
+#table_display_boxes {
+  /* make the boxes take up the full size of the fieldset */
+  width: 100%;
+  height: 100%;
+  /* flex to store the different display boxes */
+  display: flex;
+  /* arrange the move boxes next to one another */
+  flex-direction: row;
+  /* always next to one another, hopefully should make the table_display wider since that has the flex-basis: content */
+  flex-wrap: nowrap;
+  /* want boxes next to one another */
+  justify-content: center;
+  /* want boxes to be aligned from the bottom, no matter the text or other shit going on in em */
+  align-items:flex-end;
+}
+
+/* class for the divs that have the caption and move inside of them */
+.captioned_move_box {
+  margin: 5px;
+  /* flex box to hold and arrange the caption and movebox */
+  display: flex;
+  /* stack them on top of one another */
+  flex-direction: column;
+  /* not really sure what no-wrap does on a column */
+  flex-wrap: nowrap;
+  /* I think this will stack items from the bottom */
+  justify-content: flex-end;
+  /* I want them centered on the up/down */
+  align-items: center;
+  flex-basis: 50%;
+}
+
+/* class for the captions above move boxes, flex child of the captioned_move_box */
+.move_box_caption {
+  margin-bottom: 6px;
+  /* make sure the caption is first AKA on top cuz of column */
+  order: 0;
+  /* I like the iea of automatic sizing, so I'm doing it here */
+  flex-basis: content;
+}
+
+.move_box {
+  /* taken from react */
+  background: #fff;
+  border: 1px solid #999;
+  float: left;
+  font-size: 34px;
+  font-weight: bold;
+  line-height: 64px;
+  height: 64px;
+  margin-right: -1px;
+  margin-top: -1px;
+  padding: 0;
+  text-align: center;
+  width: 64px;
+  /* end of taken from react  */
+
+  /* make sure to be below the caption as that is numbered with 0*/
+  order: 1;
+}
+
+
+
+
+
 
 /* This is a style ruleset for the logs class */
 .logs {
@@ -34,7 +135,7 @@
   align-items: flex-start;
 
    width: 50%; /* This sets the width of the div to 50% of its parent's width */
-  margin: 0 auto; /* This centers the div horizontally */
+  margin: 10px; /* This centers the div horizontally */
 }
 
 .log {
@@ -73,6 +174,7 @@
 }
 
 #table_fieldset {
+  margin-top: 10px;
   background-color: #e0d7ff;
   color: papayawhip;
 }

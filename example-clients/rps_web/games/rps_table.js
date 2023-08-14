@@ -5,6 +5,117 @@
 
 
 function createTable(table) {
+  /* create the table FR
+   */
+  const move_fieldset = return_move_fieldset(table)
+
+  const table_display = return_table_display()
+
+  table.appendChild(table_display)
+  table.appendChild(move_fieldset)
+}
+
+function return_table_display() {
+  /* create the square board for the table
+   */
+  let display = document.createElement("div")
+  display.id = "table_display"
+
+  let fieldset = document.createElement("fieldset")
+  fieldset.id = "table_display_fieldset"
+
+  let legend = document.createElement("legend");
+  legend.id = "table_display_legend"
+  legend.innerText = "Current Round"
+
+  // div to store the boxes and text
+  let boxes = document.createElement("div");
+  boxes.id = "table_display_boxes"
+
+  populate_display_boxes(boxes)
+
+  fieldset.appendChild(legend)
+  fieldset.appendChild(boxes)
+
+  display.appendChild(fieldset)
+
+  return display
+}
+
+function populate_display_boxes(boxes) {
+  /* function to populate the boxes div of the display
+   * with the boxes and text representing the current round
+   *
+   * Inputs:
+   *    boxes: div inside the table display fieldset
+   *           with ID "table_display_boxes"
+   *
+   * Outputs;
+   *    nothing
+   *
+   * Side Affects:
+   *    creates 2 boxes to hold moves
+   *    and adds them to the provided boxes div
+   */
+  let your_box = create_one_captioned_move_box("Your Move","player")
+  boxes.appendChild(your_box)
+
+  let opponent_box = create_one_captioned_move_box("Opponent's Move","opponent")
+
+
+  boxes.appendChild(opponent_box)
+}
+
+function create_one_captioned_move_box(caption_text,id) {
+  /* creates a move_box with caption
+   * This includes both a caption describing what the 
+   * box contains, as well as the box itself
+   * 
+   * Inputs:
+   *    caption_text: string for the text to put on top
+   *    of the move displaying box
+   *
+   *    id: the front part of the ID for the move_box
+   *        used for identification of the move_box for updating the players move
+   *
+   * Outputs:
+   *    a <div> element of class "captioned_move_box"
+   *    containing the move_box and caption
+   */
+  // this will be the finally returned div we shove
+  // the elements into
+  let captioned_move_box = document.createElement("div");
+  captioned_move_box.className = "captioned_move_box"
+
+  let caption = document.createElement("a");
+  caption.textContent = caption_text
+  // could also add ID based on player/opponent
+  caption.className = "move_box_caption"
+
+  let move_box = document.createElement("div")
+  // class with CSS styling from the react tutorial
+  // https://react.dev/learn/tutorial-tic-tac-toe
+  move_box.className = "move_box"
+
+  if (id === "player") {
+    move_box.id = "player_move_box"
+  } else if (id === "opponent") {
+    move_box.id = "opponent_move_box"
+  } else {
+    move_box.id = "other_move_box"
+  }
+
+  // order doesn't matter here as the classes
+  // have a specified flex ordering 
+  captioned_move_box.appendChild(caption)
+  captioned_move_box.appendChild(move_box)
+
+  return captioned_move_box
+}
+
+
+
+function return_move_fieldset(table) {
   /*
    * function to actually create the HTML for the table
    *
@@ -14,17 +125,8 @@ function createTable(table) {
    */
 
   console.log("creating table...")
-  // first get the game_id from the URL
-  const url_params = new URLSearchParams(window.location.search)
-
-  // search params uses dict-like get syntax
-  // has separate method to check whether or not a field is in the URL
-  const game_id = url_params.get("game_id");
-
-  if (!game_id) {
-      table.innerText = "No subgame chosen";
-    return
-  };
+  
+  let game_id = "rps"
 
   // Clear the table div
   table.innerHTML = "";
@@ -81,8 +183,7 @@ function createTable(table) {
   // after the buttons have been created, add them to the fieldset
   fieldset.appendChild(buttons)
 
-  // after the fieldset has been populated, add it to the table
-  table.appendChild(fieldset)
+  return fieldset
 }
 
 // Export the createTable function using a named export

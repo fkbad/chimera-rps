@@ -174,6 +174,8 @@ function handle_game_action(response) {
   console.log("HANDLING GAME-ACTION RESPONSE:", response)
   const result = response.result
 
+  const move_string = result.move;
+  update_display_with_player_move(move_string)
   const move_log_item = get_move_log_item_from_result(result)
 
   update_move_log(move_log_item)
@@ -218,6 +220,20 @@ function handle_create_match(response) {
 
 // HELPER FUNCTIONS
 
+function update_display_with_player_move(player_move_string) {
+  /* function to update the box with "Your Move" with the content of your actual move
+   *
+   * Inputs:
+   *    player_move_string: the string corresponding to the players move
+   *
+   * Outputs:
+   *    none
+   *
+   * Side Affects:
+   *    adds text to the .move_box with id "players_move_box"
+   */
+
+}
 function format_move_string_for_log(result) {
   /* function to take in a result from a move game-action response 
    * and return whatever text I want in the corresponding
