@@ -230,9 +230,10 @@ function update_display_with_player_move(player_move_string) {
    *    none
    *
    * Side Affects:
-   *    adds text to the .move_box with id "players_move_box"
+   *    adds text to the .move_box with id "player_move_box"
    */
-
+  let player_move_box = document.getElementById("player_move_box");
+  player_move_box.innerText = player_move_string;
 }
 function format_move_string_for_log(result) {
   /* function to take in a result from a move game-action response 
